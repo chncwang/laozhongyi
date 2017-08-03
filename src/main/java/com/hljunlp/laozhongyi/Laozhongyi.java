@@ -45,10 +45,6 @@ public class Laozhongyi {
         scope.setRequired(true);
         options.addOption(scope);
 
-        final Option hyper = new Option("h", true, "hyper parameter file path");
-        hyper.setRequired(true);
-        options.addOption(hyper);
-
         final Option cmdOpt = new Option("c", true, "cmd");
         cmdOpt.setRequired(true);
         options.addOption(cmdOpt);
@@ -70,13 +66,10 @@ public class Laozhongyi {
         final List<HyperParameterScopeItem> items = HyperParameterScopeConfigReader
                 .read(scopeFilePath);
 
-        final String hyperParameterConfigFilePath = cmd.getOptionValue("h");
-        final HyperParameterConfig hyperParameterConfig = new HyperParameterConfig(
-                hyperParameterConfigFilePath);
-
         final String programCmd = cmd.getOptionValue("c");
 
-        LogFileManager.mkdir();
+        GeneratedFileManager.mkdirForLog();
+        GeneratedFileManager.mkdirForHyperParameterConfig();
 
         ExecutorService executorService = null;
         try {
@@ -101,7 +94,7 @@ public class Laozhongyi {
                     }
                     System.out.println("item:" + item);
                     final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
-                            hyperParameterConfig, programCmd, executorService);
+                            programCmd, executorService);
                     System.out.println("key:" + item.getKey() + "\nbest value:" + result.getLeft()
                             + " result:" + result.getRight());
                     params.put(item.getKey(), result.getLeft());
@@ -134,8 +127,7 @@ public class Laozhongyi {
 
     private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
-            final HyperParameterConfig hyperParameterConfig, final String cmdString,
-            final ExecutorService executorService) {
+            final String cmdString, final ExecutorService executorService) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Float>> futures = Lists.newArrayList();
@@ -150,8 +142,13 @@ public class Laozhongyi {
                     }
 
                     copiedHyperParameter.put(item.getKey(), value);
-                    hyperParameterConfig.write(copiedHyperParameter);
-                    final String logFileFullPath = LogFileManager
+                    final String configFilePath = GeneratedFileManager
+                            .getHyperParameterConfigFileFullPath(copiedHyperParameter,
+                                    multiValueKeys);
+                    final String newCmdString = cmdString.replace("{}", configFilePath);
+                    final HyperParameterConfig config = new HyperParameterConfig(configFilePath);
+                    config.write(copiedHyperParameter);
+                    final String logFileFullPath = GeneratedFileManager
                             .getLogFileFullPath(copiedHyperParameter, multiValueKeys);
                     System.out.println("logFileFullPath:" + logFileFullPath);
                     try (OutputStream os = new FileOutputStream(logFileFullPath)) {
@@ -159,8 +156,9 @@ public class Laozhongyi {
                         executor.setStreamHandler(new PumpStreamHandler(os));
                         final ExecuteWatchdog dog = new ExecuteWatchdog(3600000);
                         executor.setWatchdog(dog);
+                        System.out.println("begin to execute " + newCmdString);
                         final org.apache.commons.exec.CommandLine commandLine = org.apache.commons.exec.CommandLine
-                                .parse(cmdString);
+                                .parse(newCmdString);
                         try {
                             executor.execute(commandLine);
                         } catch (final ExecuteException e) {
