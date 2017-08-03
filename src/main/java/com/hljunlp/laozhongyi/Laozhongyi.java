@@ -14,6 +14,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,8 +30,6 @@ import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -98,8 +98,10 @@ public class Laozhongyi {
                     System.out.println("key:" + item.getKey() + "\nbest value:" + result.getLeft()
                             + " result:" + result.getRight());
                     params.put(item.getKey(), result.getLeft());
-                    System.out.println("complete params now:\n" + ToStringBuilder
-                            .reflectionToString(params, ToStringStyle.MULTI_LINE_STYLE));
+                    System.out.println("complete params now:\n");
+                    for (final Entry<String, String> entry : params.entrySet()) {
+                        System.out.println(entry.getKey() + ": " + entry.getValue());
+                    }
 
                     if (result.getRight() > bestResult) {
                         bestResult = result.getRight();
@@ -108,8 +110,10 @@ public class Laozhongyi {
                 }
             }
             System.out.println("hyperparameter adjusted, the best result is " + bestResult);
-            System.out.println("best hyperparameteres:\n"
-                    + ToStringBuilder.reflectionToString(params, ToStringStyle.MULTI_LINE_STYLE));
+            System.out.println("best hyperparameteres:\n");
+            for (final Entry<String, String> entry : params.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
+            }
         } finally {
             executorService.shutdown();
         }
@@ -208,7 +212,14 @@ public class Laozhongyi {
     }
 
     private static float logResult(final String log) {
-        return 0.5f;
+        final Pattern pattern = Pattern.compile("test and dev avg is ([\\d\\.]+)");
+        final Matcher matcher = pattern.matcher(log);
+        float result = 0.0f;
+        while (matcher.find()) {
+            final String string = matcher.group(1);
+            result = Float.valueOf(string);
+        }
+        return result;
     }
 
     private static Set<String> getMultiValueKeys(final List<HyperParameterScopeItem> items) {
