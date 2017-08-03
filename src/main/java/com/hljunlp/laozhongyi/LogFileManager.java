@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -27,10 +28,13 @@ public class LogFileManager {
         }
     }
 
-    public static String getLogFileFullPath(final Map<String, String> config) {
+    public static String getLogFileFullPath(final Map<String, String> config,
+            final Set<String> multiValuesKeys) {
         final List<String> keys = Lists.newArrayList();
         for (final String key : config.keySet()) {
-            keys.add(key);
+            if (multiValuesKeys.contains(key)) {
+                keys.add(key);
+            }
         }
         Collections.sort(keys);
 

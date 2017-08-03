@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class Laozhongyi {
     public static void main(final String[] args) {
@@ -83,6 +85,7 @@ public class Laozhongyi {
 
             final Random random = new Random();
             final Map<String, String> params = initHyperParameters(items, random);
+            final Set<String> multiValueKeys = getMultiValueKeys(items);
             boolean shouldStop = false;
             while (!shouldStop) {
                 for (final HyperParameterScopeItem item : items) {
@@ -96,8 +99,8 @@ public class Laozhongyi {
                         continue;
                     }
                     System.out.println("item:" + item);
-                    final Pair<String, Float> result = tryItem(item, params, hyperParameterConfig,
-                            programCmd, executorService);
+                    final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
+                            hyperParameterConfig, programCmd, executorService);
                     System.out.println("key:" + item.getKey() + "\nbest value:" + result.getLeft()
                             + " result:" + result.getRight());
                     params.put(item.getKey(), result.getLeft());
@@ -129,7 +132,7 @@ public class Laozhongyi {
     }
 
     private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
-            final Map<String, String> currentHyperParameter,
+            final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
             final HyperParameterConfig hyperParameterConfig, final String cmdString,
             final ExecutorService executorService) {
         Preconditions.checkArgument(item.getValues().size() > 1);
@@ -141,7 +144,7 @@ public class Laozhongyi {
                 @Override
                 public Float call() {
                     final String logFileFullPath = LogFileManager
-                            .getLogFileFullPath(currentHyperParameter);
+                            .getLogFileFullPath(currentHyperParameter, multiValueKeys);
                     System.out.println("logFileFullPath:" + logFileFullPath);
                     try (OutputStream os = new FileOutputStream(logFileFullPath)) {
                         currentHyperParameter.put(item.getKey(), value);
@@ -201,5 +204,16 @@ public class Laozhongyi {
 
     private static float logResult(final String log) {
         return 0.5f;
+    }
+
+    private static Set<String> getMultiValueKeys(final List<HyperParameterScopeItem> items) {
+        final Set<String> keys = Sets.newTreeSet();
+        for (final HyperParameterScopeItem item : items) {
+            if (item.getValues().size() > 1) {
+                keys.add(item.getKey());
+            }
+        }
+
+        return keys;
     }
 }
