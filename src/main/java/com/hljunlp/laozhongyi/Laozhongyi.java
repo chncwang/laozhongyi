@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -143,12 +144,17 @@ public class Laozhongyi {
             final Future<Float> future = executorService.submit(new Callable<Float>() {
                 @Override
                 public Float call() {
+                    final Map<String, String> copiedHyperParameter = Maps.newTreeMap();
+                    for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
+                        copiedHyperParameter.put(entry.getKey(), entry.getValue());
+                    }
+
                     final String logFileFullPath = LogFileManager
-                            .getLogFileFullPath(currentHyperParameter, multiValueKeys);
+                            .getLogFileFullPath(copiedHyperParameter, multiValueKeys);
                     System.out.println("logFileFullPath:" + logFileFullPath);
                     try (OutputStream os = new FileOutputStream(logFileFullPath)) {
-                        currentHyperParameter.put(item.getKey(), value);
-                        hyperParameterConfig.write(currentHyperParameter);
+                        copiedHyperParameter.put(item.getKey(), value);
+                        hyperParameterConfig.write(copiedHyperParameter);
 
                         final DefaultExecutor executor = new DefaultExecutor();
                         executor.setStreamHandler(new PumpStreamHandler(os));
