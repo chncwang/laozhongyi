@@ -149,13 +149,12 @@ public class Laozhongyi {
                         copiedHyperParameter.put(entry.getKey(), entry.getValue());
                     }
 
+                    copiedHyperParameter.put(item.getKey(), value);
+                    hyperParameterConfig.write(copiedHyperParameter);
                     final String logFileFullPath = LogFileManager
                             .getLogFileFullPath(copiedHyperParameter, multiValueKeys);
                     System.out.println("logFileFullPath:" + logFileFullPath);
                     try (OutputStream os = new FileOutputStream(logFileFullPath)) {
-                        copiedHyperParameter.put(item.getKey(), value);
-                        hyperParameterConfig.write(copiedHyperParameter);
-
                         final DefaultExecutor executor = new DefaultExecutor();
                         executor.setStreamHandler(new PumpStreamHandler(os));
                         final ExecuteWatchdog dog = new ExecuteWatchdog(3600000);
