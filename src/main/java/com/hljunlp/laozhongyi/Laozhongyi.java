@@ -140,7 +140,7 @@ public class Laozhongyi {
         final List<Future<Float>> futures = Lists.newArrayList();
 
         for (final String value : item.getValues()) {
-            executorService.submit(new Callable<Float>() {
+            final Future<Float> future = executorService.submit(new Callable<Float>() {
                 @Override
                 public Float call() {
                     final String logFileFullPath = LogFileManager
@@ -177,6 +177,7 @@ public class Laozhongyi {
                     }
                 }
             });
+            futures.add(future);
         }
 
         float bestResult = -1;
