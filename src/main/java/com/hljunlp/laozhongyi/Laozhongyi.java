@@ -187,6 +187,7 @@ public class Laozhongyi {
             final float futureResult;
             try {
                 futureResult = future.get();
+                System.out.println("futreResult:" + futureResult);
             } catch (final InterruptedException e) {
                 throw new IllegalStateException(e);
             } catch (final ExecutionException e) {
