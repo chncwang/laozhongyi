@@ -1,8 +1,17 @@
 package com.hljunlp.laozhongyi;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -10,8 +19,20 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class Laozhongyi {
@@ -54,14 +75,46 @@ public class Laozhongyi {
 
         LogFileManager.mkdir();
 
-        final Random random = new Random();
-        final Map<String, String> params = initHyperParameters(items, random);
-        for (final HyperParameterScopeItem item : items) {
-            Preconditions.checkState(!item.getValues().isEmpty());
-            if (item.getValues().size() == 1) {
-                continue;
+        ExecutorService executorService = null;
+        try {
+            executorService = Executors.newFixedThreadPool(8);
+            float bestResult = -1;
+            String hitBestKey = StringUtils.EMPTY;
+
+            final Random random = new Random();
+            final Map<String, String> params = initHyperParameters(items, random);
+            boolean shouldStop = false;
+            while (!shouldStop) {
+                for (final HyperParameterScopeItem item : items) {
+                    if (hitBestKey.equals(item.getKey())) {
+                        shouldStop = true;
+                        break;
+                    }
+
+                    Preconditions.checkState(!item.getValues().isEmpty());
+                    if (item.getValues().size() == 1) {
+                        continue;
+                    }
+                    System.out.println("item:" + item);
+                    final Pair<String, Float> result = tryItem(item, params, hyperParameterConfig,
+                            programCmd, executorService);
+                    System.out.println("key:" + item.getKey() + "\nbest value:" + result.getLeft()
+                            + " result:" + result.getRight());
+                    params.put(item.getKey(), result.getLeft());
+                    System.out.println("complete params now:\n" + ToStringBuilder
+                            .reflectionToString(params, ToStringStyle.MULTI_LINE_STYLE));
+
+                    if (result.getRight() > bestResult) {
+                        bestResult = result.getRight();
+                        hitBestKey = item.getKey();
+                    }
+                }
             }
-            tryItem(item, params, hyperParameterConfig, programCmd);
+            System.out.println("hyperparameter adjusted, the best result is " + bestResult);
+            System.out.println("best hyperparameteres:\n"
+                    + ToStringBuilder.reflectionToString(params, ToStringStyle.MULTI_LINE_STYLE));
+        } finally {
+            executorService.shutdown();
         }
     }
 
@@ -75,15 +128,78 @@ public class Laozhongyi {
         return result;
     }
 
-    private static void tryItem(final HyperParameterScopeItem item,
+    private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
             final Map<String, String> currentHyperParameter,
-            final HyperParameterConfig hyperParameterConfig, final String programCmd) {
+            final HyperParameterConfig hyperParameterConfig, final String cmdString,
+            final ExecutorService executorService) {
         Preconditions.checkArgument(item.getValues().size() > 1);
-        for (final String value : item.getValues()) {
-            currentHyperParameter.put(item.getKey(), value);
-            hyperParameterConfig.write(currentHyperParameter);
-            final String logFileFullPath = LogFileManager.getLogFileFullPath(currentHyperParameter);
 
+        final List<Future<Float>> futures = Lists.newArrayList();
+
+        for (final String value : item.getValues()) {
+            executorService.submit(new Callable<Float>() {
+                @Override
+                public Float call() {
+                    final String logFileFullPath = LogFileManager
+                            .getLogFileFullPath(currentHyperParameter);
+                    System.out.println("logFileFullPath:" + logFileFullPath);
+                    try (OutputStream os = new FileOutputStream(logFileFullPath)) {
+                        currentHyperParameter.put(item.getKey(), value);
+                        hyperParameterConfig.write(currentHyperParameter);
+
+                        final DefaultExecutor executor = new DefaultExecutor();
+                        executor.setStreamHandler(new PumpStreamHandler(os));
+                        final ExecuteWatchdog dog = new ExecuteWatchdog(3600000);
+                        executor.setWatchdog(dog);
+                        final org.apache.commons.exec.CommandLine commandLine = org.apache.commons.exec.CommandLine
+                                .parse(cmdString);
+                        try {
+                            executor.execute(commandLine);
+                        } catch (final ExecuteException e) {
+                            throw new IllegalStateException(e);
+                        } catch (final IOException e) {
+                            throw new IllegalStateException(e);
+                        }
+
+                        final String log = FileUtils.readFileToString(new File(logFileFullPath),
+                                Charsets.UTF_8);
+                        final float result = logResult(log);
+                        return result;
+                    } catch (final RuntimeException e) {
+                        e.printStackTrace();
+                        throw e;
+                    } catch (final IOException e) {
+                        e.printStackTrace();
+                        throw new IllegalStateException(e);
+                    }
+                }
+            });
         }
+
+        float bestResult = -1;
+        String bestValue = null;
+        int i = -1;
+        for (final Future<Float> future : futures) {
+            ++i;
+            final float futureResult;
+            try {
+                futureResult = future.get();
+            } catch (final InterruptedException e) {
+                throw new IllegalStateException(e);
+            } catch (final ExecutionException e) {
+                throw new IllegalStateException(e);
+            }
+
+            if (futureResult > bestResult) {
+                bestResult = futureResult;
+                bestValue = item.getValues().get(i);
+            }
+        }
+        Preconditions.checkNotNull(bestValue);
+        return ImmutablePair.of(bestValue, bestResult);
+    }
+
+    private static float logResult(final String log) {
+        return 0.5f;
     }
 }
