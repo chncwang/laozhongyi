@@ -88,9 +88,9 @@ public class Laozhongyi {
 
         final Strategy strategy;
         final String strategyStr = cmd.getOptionValue("strategy");
-        if (strategyStr == "base") {
+        if (strategyStr.equals("base")) {
             strategy = new BaseStrategy();
-        } else if (strategyStr == "sa") {
+        } else if (strategyStr.equals("sa")) {
             final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
             final float t = Float.valueOf(cmd.getOptionValue("sat"));
             strategy = new SimulatedAnnealingStrategy(ratio, t);
