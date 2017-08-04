@@ -166,7 +166,7 @@ public class Laozhongyi {
                         try {
                             executor.execute(commandLine);
                         } catch (final ExecuteException e) {
-                            throw new IllegalStateException(e);
+                            System.out.println(e.getMessage());
                         } catch (final IOException e) {
                             throw new IllegalStateException(e);
                         }
