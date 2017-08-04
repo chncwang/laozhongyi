@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,12 +32,16 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.hljunlp.laozhongyi.strategy.BaseStrategy;
+import com.hljunlp.laozhongyi.strategy.SimulatedAnnealingStrategy;
+import com.hljunlp.laozhongyi.strategy.Strategy;
 
 public class Laozhongyi {
     public static void main(final String[] args) {
@@ -48,6 +53,10 @@ public class Laozhongyi {
         final Option cmdOpt = new Option("c", true, "cmd");
         cmdOpt.setRequired(true);
         options.addOption(cmdOpt);
+
+        final Option strategyOpt = new Option("strategy", true, "strategy");
+        strategyOpt.setRequired(false);
+        options.addOption(strategyOpt);
 
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cmd;
@@ -66,16 +75,29 @@ public class Laozhongyi {
         final List<HyperParameterScopeItem> items = HyperParameterScopeConfigReader
                 .read(scopeFilePath);
 
+        final Strategy strategy;
+        final String strategyStr = cmd.getOptionValue("strategy");
+        if (strategyStr == null || strategyStr == "base") {
+            strategy = new BaseStrategy();
+        } else if (strategyStr == "strategy") {
+            strategy = new SimulatedAnnealingStrategy((float) 0.9, 1);
+        } else {
+            throw new IllegalArgumentException("strategy param is " + strategyStr);
+        }
+
         final String programCmd = cmd.getOptionValue("c");
 
         GeneratedFileManager.mkdirForLog();
         GeneratedFileManager.mkdirForHyperParameterConfig();
 
+        final MutablePair<Map<String, String>, Float> bestPair = MutablePair
+                .of(Collections.emptyMap(), -1.f);
+
         ExecutorService executorService = null;
         try {
             executorService = Executors.newFixedThreadPool(8);
-            float bestResult = -1;
-            String hitBestKey = StringUtils.EMPTY;
+            float fakeBestResult = -1;
+            String modifiedKey = StringUtils.EMPTY;
 
             final Random random = new Random();
             final Map<String, String> params = initHyperParameters(items, random);
@@ -83,7 +105,7 @@ public class Laozhongyi {
             boolean shouldStop = false;
             while (!shouldStop) {
                 for (final HyperParameterScopeItem item : items) {
-                    if (hitBestKey.equals(item.getKey())) {
+                    if (modifiedKey.equals(item.getKey())) {
                         shouldStop = true;
                         break;
                     }
@@ -94,24 +116,25 @@ public class Laozhongyi {
                     }
                     System.out.println("item:" + item);
                     final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
-                            programCmd, executorService);
-                    System.out.println("key:" + item.getKey() + "\nbest value:" + result.getLeft()
-                            + " result:" + result.getRight());
+                            programCmd, executorService, strategy, bestPair);
+                    System.out.println("key:" + item.getKey() + "\nsuitable value:"
+                            + result.getLeft() + " result:" + result.getRight());
                     params.put(item.getKey(), result.getLeft());
-                    System.out.println("complete params now:\n");
+                    System.out.println("complete params now:");
                     for (final Entry<String, String> entry : params.entrySet()) {
                         System.out.println(entry.getKey() + ": " + entry.getValue());
                     }
 
-                    if (result.getRight() > bestResult) {
-                        bestResult = result.getRight();
-                        hitBestKey = item.getKey();
+                    if (result.getRight() > fakeBestResult) {
+                        fakeBestResult = result.getRight();
+                        modifiedKey = item.getKey();
                     }
                 }
             }
-            System.out.println("hyperparameter adjusted, the best result is " + bestResult);
-            System.out.println("best hyperparameteres:\n");
-            for (final Entry<String, String> entry : params.entrySet()) {
+            System.out
+                    .println("hyperparameter adjusted, the best result is " + bestPair.getRight());
+            System.out.println("best hyperparameteres:");
+            for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
         } finally {
@@ -131,7 +154,8 @@ public class Laozhongyi {
 
     private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
-            final String cmdString, final ExecutorService executorService) {
+            final String cmdString, final ExecutorService executorService, final Strategy strategy,
+            final MutablePair<Map<String, String>, Float> best) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Float>> futures = Lists.newArrayList();
@@ -187,32 +211,48 @@ public class Laozhongyi {
             futures.add(future);
         }
 
-        float bestResult = -1;
-        String bestValue = null;
-        int i = -1;
-        for (final Future<Float> future : futures) {
-            ++i;
+        final List<Float> results = Lists.newArrayList();
+        for (int i = 0; i < futures.size(); ++i) {
             final float futureResult;
             try {
-                futureResult = future.get();
-                System.out.println("futreResult:" + futureResult);
+                futureResult = futures.get(i).get();
+                System.out.println("key:" + item.getKey() + " value:" + item.getValues().get(i)
+                        + " futureResult:" + futureResult);
             } catch (final InterruptedException e) {
                 throw new IllegalStateException(e);
             } catch (final ExecutionException e) {
                 throw new IllegalStateException(e);
             }
 
-            if (futureResult > bestResult) {
-                bestResult = futureResult;
-                bestValue = item.getValues().get(i);
+            results.add(futureResult);
+        }
+
+        float bestResult = -1;
+        int bestIndex = -1;
+        for (int i = 0; i < results.size(); ++i) {
+            if (results.get(i) > bestResult) {
+                bestResult = results.get(i);
+                bestIndex = i;
             }
         }
-        Preconditions.checkNotNull(bestValue);
-        return ImmutablePair.of(bestValue, bestResult);
+
+        best.setRight(bestResult);
+
+        final Map<String, String> bestParams = Maps.newTreeMap();
+        for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
+            bestParams.put(entry.getKey(), entry.getValue());
+        }
+        bestParams.put(item.getKey(), item.getValues().get(bestIndex));
+
+        best.setLeft(bestParams);
+
+        final int suitableIndex = strategy.chooseSuitableIndex(results);
+
+        return ImmutablePair.of(item.getValues().get(suitableIndex), results.get(suitableIndex));
     }
 
     private static float logResult(final String log) {
-        final Pattern pattern = Pattern.compile("test and dev avg is ([\\d\\.]+)");
+        final Pattern pattern = Pattern.compile("laozhongyi_([\\d\\.]+)");
         final Matcher matcher = pattern.matcher(log);
         float result = 0.0f;
         while (matcher.find()) {
