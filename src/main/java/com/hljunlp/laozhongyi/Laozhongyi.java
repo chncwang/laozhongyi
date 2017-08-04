@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -54,15 +55,25 @@ public class Laozhongyi {
         cmdOpt.setRequired(true);
         options.addOption(cmdOpt);
 
-        final Option strategyOpt = new Option("strategy", true, "strategy");
-        strategyOpt.setRequired(false);
+        final Option strategyOpt = new Option("strategy", true, "base or sa");
+        strategyOpt.setRequired(true);
         options.addOption(strategyOpt);
+
+        final Option saTOpt = new Option("sat", true, "simulated annealing initial temperature");
+        saTOpt.setRequired(false);
+        options.addOption(saTOpt);
+
+        final Option saROpt = new Option("sar", true, "simulated annealing ratio");
+        saTOpt.setRequired(false);
+        options.addOption(saROpt);
 
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cmd;
         try {
             cmd = parser.parse(options, args);
         } catch (final ParseException e) {
+            final HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("laozhonghi", options);
             throw new IllegalStateException(e);
         }
 
@@ -77,10 +88,12 @@ public class Laozhongyi {
 
         final Strategy strategy;
         final String strategyStr = cmd.getOptionValue("strategy");
-        if (strategyStr == null || strategyStr == "base") {
+        if (strategyStr == "base") {
             strategy = new BaseStrategy();
-        } else if (strategyStr == "strategy") {
-            strategy = new SimulatedAnnealingStrategy((float) 0.9, 1);
+        } else if (strategyStr == "sa") {
+            final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
+            final float t = Float.valueOf(cmd.getOptionValue("sat"));
+            strategy = new SimulatedAnnealingStrategy(ratio, t);
         } else {
             throw new IllegalArgumentException("strategy param is " + strategyStr);
         }
@@ -96,7 +109,6 @@ public class Laozhongyi {
         ExecutorService executorService = null;
         try {
             executorService = Executors.newFixedThreadPool(8);
-            float fakeBestResult = -1;
             String modifiedKey = StringUtils.EMPTY;
 
             final Random random = new Random();
@@ -119,15 +131,14 @@ public class Laozhongyi {
                             programCmd, executorService, strategy, bestPair);
                     System.out.println("key:" + item.getKey() + "\nsuitable value:"
                             + result.getLeft() + " result:" + result.getRight());
-                    params.put(item.getKey(), result.getLeft());
-                    System.out.println("complete params now:");
-                    for (final Entry<String, String> entry : params.entrySet()) {
-                        System.out.println(entry.getKey() + ": " + entry.getValue());
-                    }
-
-                    if (result.getRight() > fakeBestResult) {
-                        fakeBestResult = result.getRight();
+                    if (!result.getLeft().equals(params.get(item.getKey()))) {
                         modifiedKey = item.getKey();
+                        params.put(item.getKey(), result.getLeft());
+                    }
+                    System.out.println("best result:" + bestPair.getRight());
+                    System.out.println("best params now:");
+                    for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
+                        System.out.println(entry.getKey() + ": " + entry.getValue());
                     }
                 }
             }
