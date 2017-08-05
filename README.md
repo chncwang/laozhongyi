@@ -54,7 +54,11 @@ usage: laozhonghi
  -wd <arg>         working directory
  ```
  -c表示运行程序时的命令，需要加引号，如"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"，{}将在老中医运行时被替换成超参数配置文件的路径
+ 
  -rt表示每个进程运行时间的上限，单位是分钟，比如-rt 20表示一个进程如果在运行20分钟后，仍没有结束运行（比如因为训练集仍然没有足够好的拟合），则强制结束
+ 
  -s表示调参范围的配置文件的路径
+ 
  -strategy表示搜索策略，取值为base时是坐标下降法，sa时是模拟退火，sar是模拟退火算法中温度衰减的比率，sat是初始温度
+ 
  -wd表示进程的工作目录，这允许被调参程序内使用相对路径，可选
