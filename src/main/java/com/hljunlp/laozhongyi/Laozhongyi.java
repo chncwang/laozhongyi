@@ -261,16 +261,19 @@ public class Laozhongyi {
                 bestIndex = i;
             }
         }
+        Preconditions.checkState(bestIndex != -1);
 
-        best.setRight(bestResult);
+        if (bestResult > best.getRight()) {
+            best.setRight(bestResult);
 
-        final Map<String, String> bestParams = Maps.newTreeMap();
-        for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
-            bestParams.put(entry.getKey(), entry.getValue());
+            final Map<String, String> bestParams = Maps.newTreeMap();
+            for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
+                bestParams.put(entry.getKey(), entry.getValue());
+            }
+            bestParams.put(item.getKey(), item.getValues().get(bestIndex));
+
+            best.setLeft(bestParams);
         }
-        bestParams.put(item.getKey(), item.getValues().get(bestIndex));
-
-        best.setLeft(bestParams);
 
         final int suitableIndex = strategy.chooseSuitableIndex(results);
 
