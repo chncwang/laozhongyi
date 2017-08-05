@@ -24,3 +24,19 @@ wordEmbSize,100
 因为老中医基于字符串，所以和被调参程序使用的编程语言、深度学习框架无关，可以是基于pytorch，tensorflow的python程序，也可以是基于[N3LDG](https://github.com/zhangmeishan/N3LDG)的C++程序
 * 程序需要在训练集表现足够好时退出，否则程序会达到运行时间上限后被中止，这会降低调参程序的效率
 * 程序需要打log的标准输出（老中医会把标准输出重定向到合适的log文件），log中需要有类似laozhongyi_0.8这样的字段，其中laozhongyi_是为了便于定位，0.8是程序在开发集上的表现
+* 程序需要解析老中医输出的超参数配置文件，并且支持把超参数配置文件的路径作为程序运行参数
+
+超参数配置文件的格式如下：
+```
+adaAlpha = 0.0001
+batchSize = 16
+dropProb = 0.1
+hiddenSize = 50
+maxInstance = -1
+maxIter = 10
+outBest = .debug
+wordCutOff = 7
+wordEmbFineTune = true
+wordEmbSize = 100
+wordFile = /home/wqs/w2v.txt
+```
