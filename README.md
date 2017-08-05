@@ -6,19 +6,19 @@
 * 现有的一些自动调参程序基于python，老中医基于字符串（比如对log文件的解析）
 # 使用方法
 ## 调参范围的配置文件例子params.config：
-
-    adaAlpha,0.01,0.001,0.0001
-    wordEmbFineTune,true,false
-    wordCutOff,0,1,2,3,4,5,6,7,8,9,10
-    dropProb,-1,0.1,0.2,0.3,0.4,0.5
-    batchSize,1,2,4,8,16,32,64,90
-    hiddenSize,50,60,100
-    maxIter,1000
-    maxInstance,-1
-    outBest,.debug
-    wordFile,/home/wqs/w2v.txt
-    wordEmbSize,100
-
+```
+adaAlpha,0.01,0.001,0.0001
+wordEmbFineTune,true,false
+wordCutOff,0,1,2,3,4,5,6,7,8,9,10
+dropProb,-1,0.1,0.2,0.3,0.4,0.5
+batchSize,1,2,4,8,16,32,64,90
+hiddenSize,50,60,100
+maxIter,1000
+maxInstance,-1
+outBest,.debug
+wordFile,/home/wqs/w2v.txt
+wordEmbSize,100
+```
 每一行是参数名跟一串要调试的参数值，用逗号隔开。如果这个参数只有一个值，则它是固定值，不被调试。
 ## 对被调参程序的要求
 因为老中医基于字符串，所以和被调参程序使用的编程语言、深度学习框架无关，可以是基于pytorch，tensorflow的python程序，也可以是基于[N3LDG](https://github.com/zhangmeishan/N3LDG)的C++程序
