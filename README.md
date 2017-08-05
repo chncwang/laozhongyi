@@ -17,4 +17,10 @@
     maxInstance,-1
     outBest,.debug
     wordFile,/home/wqs/w2v.txt
-    wordEmbSize,100
+    wordEmbSize,100
+
+每一行是参数名跟一串要调试的参数值，用逗号隔开。如果这个参数只有一个值，则它是固定值，不被调试。
+## 对被调参程序的要求
+因为老中医基于字符串，所以和被调参程序使用的编程语言、深度学习框架无关，可以是基于pytorch，tensorflow的python程序，也可以是基于[N3LDG](https://github.com/zhangmeishan/N3LDG)的C++程序
+* 程序需要在训练集表现足够好时退出，否则程序会达到运行时间上限后被中止，这会降低调参程序的效率
+* 程序需要打log的标准输出（老中医会把标准输出重定向到合适的log文件），log中需要有类似laozhongyi_0.8这样的字段，其中laozhongyi_是为了便于定位，0.8是程序在开发集上的表现
