@@ -6,7 +6,8 @@
 * 现有的一些自动调参程序基于python，老中医基于字符串（比如对log文件的解析）
 # 使用方法
 ## 调参范围的配置文件
-    adaAlpha,0.01,0.001,0.0001
+
+    adaAlpha,0.01,0.001,0.0001
     wordEmbFineTune,true,false
     wordCutOff,0,1,2,3,4,5,6,7,8,9,10
     dropProb,-1,0.1,0.2,0.3,0.4,0.5
