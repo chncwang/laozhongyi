@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -55,6 +56,10 @@ public class Laozhongyi {
         cmdOpt.setRequired(true);
         options.addOption(cmdOpt);
 
+        final Option workingDir = new Option("wd", true, "working directory");
+        workingDir.setRequired(false);
+        options.addOption(workingDir);
+
         final Option strategyOpt = new Option("strategy", true, "base or sa");
         strategyOpt.setRequired(true);
         options.addOption(strategyOpt);
@@ -98,6 +103,8 @@ public class Laozhongyi {
             throw new IllegalArgumentException("strategy param is " + strategyStr);
         }
 
+        final String workingDirStr = cmd.getOptionValue("wd");
+
         final String programCmd = cmd.getOptionValue("c");
 
         GeneratedFileManager.mkdirForLog();
@@ -128,7 +135,8 @@ public class Laozhongyi {
                     }
                     System.out.println("item:" + item);
                     final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
-                            programCmd, executorService, strategy, bestPair);
+                            programCmd, executorService, strategy, bestPair,
+                            Optional.ofNullable(workingDirStr));
                     System.out.println("key:" + item.getKey() + "\nsuitable value:"
                             + result.getLeft() + " result:" + result.getRight());
                     if (!result.getLeft().equals(params.get(item.getKey()))) {
@@ -148,6 +156,9 @@ public class Laozhongyi {
             for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
                 System.out.println(entry.getKey() + ": " + entry.getValue());
             }
+        } catch (final RuntimeException e) {
+            e.printStackTrace();
+            throw e;
         } finally {
             executorService.shutdown();
         }
@@ -166,7 +177,7 @@ public class Laozhongyi {
     private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
             final String cmdString, final ExecutorService executorService, final Strategy strategy,
-            final MutablePair<Map<String, String>, Float> best) {
+            final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Float>> futures = Lists.newArrayList();
@@ -193,6 +204,9 @@ public class Laozhongyi {
                     try (OutputStream os = new FileOutputStream(logFileFullPath)) {
                         final DefaultExecutor executor = new DefaultExecutor();
                         executor.setStreamHandler(new PumpStreamHandler(os));
+                        if (workingDir.isPresent()) {
+                            executor.setWorkingDirectory(new File(workingDir.get()));
+                        }
                         final ExecuteWatchdog dog = new ExecuteWatchdog(3600000);
                         executor.setWatchdog(dog);
                         System.out.println("begin to execute " + newCmdString);

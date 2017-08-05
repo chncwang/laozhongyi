@@ -51,5 +51,6 @@ public class SimulatedAnnealingStrategy implements Strategy {
     public void iterationEnd() {
         final float next = mT * mR;
         mT = next > 0.001 ? next : mT;
+        System.out.println("SimulatedAnnealingStrategy iterationEnd mT:" + mT);
     }
 }
