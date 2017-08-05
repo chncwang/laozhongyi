@@ -72,6 +72,10 @@ public class Laozhongyi {
         saTOpt.setRequired(false);
         options.addOption(saROpt);
 
+        final Option runtimeOpt = new Option("rt", true, "program runtime upper bound in minutes");
+        runtimeOpt.setRequired(true);
+        options.addOption(runtimeOpt);
+
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cmd;
         try {
@@ -107,6 +111,8 @@ public class Laozhongyi {
 
         final String programCmd = cmd.getOptionValue("c");
 
+        final int runtimeMinutes = Integer.valueOf(cmd.getOptionValue("rt"));
+
         GeneratedFileManager.mkdirForLog();
         GeneratedFileManager.mkdirForHyperParameterConfig();
 
@@ -136,7 +142,7 @@ public class Laozhongyi {
                     System.out.println("item:" + item);
                     final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
                             programCmd, executorService, strategy, bestPair,
-                            Optional.ofNullable(workingDirStr));
+                            Optional.ofNullable(workingDirStr), runtimeMinutes);
                     System.out.println("key:" + item.getKey() + "\nsuitable value:"
                             + result.getLeft() + " result:" + result.getRight());
                     if (!result.getLeft().equals(params.get(item.getKey()))) {
@@ -178,7 +184,8 @@ public class Laozhongyi {
     private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
             final String cmdString, final ExecutorService executorService, final Strategy strategy,
-            final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir) {
+            final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir,
+            final int runtimeMinutes) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Float>> futures = Lists.newArrayList();
@@ -208,7 +215,7 @@ public class Laozhongyi {
                         if (workingDir.isPresent()) {
                             executor.setWorkingDirectory(new File(workingDir.get()));
                         }
-                        final ExecuteWatchdog dog = new ExecuteWatchdog(3600000);
+                        final ExecuteWatchdog dog = new ExecuteWatchdog(60000 * runtimeMinutes);
                         executor.setWatchdog(dog);
                         System.out.println("begin to execute " + newCmdString);
                         final org.apache.commons.exec.CommandLine commandLine = org.apache.commons.exec.CommandLine
