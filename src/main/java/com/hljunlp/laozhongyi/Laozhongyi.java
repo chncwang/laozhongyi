@@ -137,7 +137,6 @@ public class Laozhongyi {
                     final Pair<String, Float> result = tryItem(item, multiValueKeys, params,
                             programCmd, executorService, strategy, bestPair,
                             Optional.ofNullable(workingDirStr));
-                    strategy.iterationEnd();
                     System.out.println("key:" + item.getKey() + "\nsuitable value:"
                             + result.getLeft() + " result:" + result.getRight());
                     if (!result.getLeft().equals(params.get(item.getKey()))) {
@@ -150,6 +149,7 @@ public class Laozhongyi {
                         System.out.println(entry.getKey() + ": " + entry.getValue());
                     }
                 }
+                strategy.iterationEnd();
             }
             System.out
                     .println("hyperparameter adjusted, the best result is " + bestPair.getRight());
