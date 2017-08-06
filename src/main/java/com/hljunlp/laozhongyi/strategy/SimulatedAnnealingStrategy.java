@@ -33,7 +33,7 @@ public class SimulatedAnnealingStrategy implements Strategy {
         }
 
         for (int i = 0; i < exps.size(); ++i) {
-            System.out.print("SimulatedAnnealingStrategy chooseSuitableIndex " + i + " prob:"
+            System.out.println("SimulatedAnnealingStrategy chooseSuitableIndex " + i + " prob:"
                     + exps.get(i) / sum);
         }
 
