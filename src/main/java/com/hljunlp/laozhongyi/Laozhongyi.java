@@ -42,8 +42,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.hljunlp.laozhongyi.strategy.BaseStrategy;
-import com.hljunlp.laozhongyi.strategy.SimulatedAnnealingStrategy;
 import com.hljunlp.laozhongyi.strategy.Strategy;
+import com.hljunlp.laozhongyi.strategy.VariantSimulatedAnnealingStrategy;
 
 public class Laozhongyi {
     public static void main(final String[] args) {
@@ -60,7 +60,7 @@ public class Laozhongyi {
         workingDir.setRequired(false);
         options.addOption(workingDir);
 
-        final Option strategyOpt = new Option("strategy", true, "base or sa");
+        final Option strategyOpt = new Option("strategy", true, "base or sa or vsa");
         strategyOpt.setRequired(true);
         options.addOption(strategyOpt);
 
@@ -102,7 +102,11 @@ public class Laozhongyi {
         } else if (strategyStr.equals("sa")) {
             final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
             final float t = Float.valueOf(cmd.getOptionValue("sat"));
-            strategy = new SimulatedAnnealingStrategy(ratio, t);
+            strategy = new VariantSimulatedAnnealingStrategy(ratio, t);
+        } else if (strategyStr.equals("vsa")) {
+            final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
+            final float t = Float.valueOf(cmd.getOptionValue("sat"));
+            strategy = new VariantSimulatedAnnealingStrategy(ratio, t);
         } else {
             throw new IllegalArgumentException("strategy param is " + strategyStr);
         }
@@ -303,7 +307,9 @@ public class Laozhongyi {
             }
         }
 
-        final int suitableIndex = strategy.chooseSuitableIndex(results);
+        final String originalValue = currentHyperParameter.get(item.getKey());
+        final int originalIndex = item.getValues().indexOf(originalValue);
+        final int suitableIndex = strategy.chooseSuitableIndex(results, originalIndex);
 
         return ImmutablePair.of(item.getValues().get(suitableIndex), results.get(suitableIndex));
     }

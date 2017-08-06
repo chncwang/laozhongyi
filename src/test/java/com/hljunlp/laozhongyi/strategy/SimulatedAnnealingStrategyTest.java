@@ -15,9 +15,9 @@ public class SimulatedAnnealingStrategyTest {
             probs.add((float) 0.49);
         }
 
-        final Strategy strategy = new SimulatedAnnealingStrategy((float) 0.9, 1);
+        final Strategy strategy = new VariantSimulatedAnnealingStrategy((float) 0.9, 1);
         for (int i = 0; i < 1000; ++i) {
-            final int index = strategy.chooseSuitableIndex(probs);
+            final int index = strategy.chooseSuitableIndex(probs, 0);
             System.out.println(i + ":" + index);
             strategy.iterationEnd();
         }

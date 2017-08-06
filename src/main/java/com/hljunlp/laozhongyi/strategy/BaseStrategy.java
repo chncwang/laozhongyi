@@ -6,7 +6,7 @@ import com.google.common.base.Preconditions;
 
 public class BaseStrategy implements Strategy {
     @Override
-    public int chooseSuitableIndex(final List<Float> results) {
+    public int chooseSuitableIndex(final List<Float> results, final int originalIndex) {
         float best = -1000;
         int index = -1;
         int i = -1;
