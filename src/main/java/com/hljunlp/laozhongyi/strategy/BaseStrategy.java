@@ -20,9 +20,4 @@ public class BaseStrategy implements Strategy {
         Preconditions.checkState(best != -1000);
         return index;
     }
-
-    @Override
-    public void iterationEnd() {
-    }
-
 }

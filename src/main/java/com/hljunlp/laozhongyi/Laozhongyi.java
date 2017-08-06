@@ -122,19 +122,13 @@ public class Laozhongyi {
         ExecutorService executorService = null;
         try {
             executorService = Executors.newFixedThreadPool(8);
-            String modifiedKey = StringUtils.EMPTY;
 
             final Random random = new Random();
-            final Map<String, String> params = initHyperParameters(items, random);
+            Map<String, String> params = initHyperParameters(items, random);
             final Set<String> multiValueKeys = getMultiValueKeys(items);
-            boolean shouldStop = false;
-            while (!shouldStop) {
+            while (true) {
+                String modifiedKey = StringUtils.EMPTY;
                 for (final HyperParameterScopeItem item : items) {
-                    if (modifiedKey.equals(item.getKey())) {
-                        shouldStop = true;
-                        break;
-                    }
-
                     Preconditions.checkState(!item.getValues().isEmpty());
                     if (item.getValues().size() == 1) {
                         continue;
@@ -156,6 +150,17 @@ public class Laozhongyi {
                     }
                 }
                 strategy.iterationEnd();
+
+                if (modifiedKey.equals(StringUtils.EMPTY)) {
+                    if (params.equals(bestPair.getLeft())) {
+                        if (strategy.ensureIfStop(true)) {
+                            break;
+                        }
+                    } else {
+                        params = bestPair.getLeft();
+                        strategy.restoreBest();
+                    }
+                }
             }
             System.out
                     .println("hyperparameter adjusted, the best result is " + bestPair.getRight());
@@ -198,8 +203,14 @@ public class Laozhongyi {
                     for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
                         copiedHyperParameter.put(entry.getKey(), entry.getValue());
                     }
-
                     copiedHyperParameter.put(item.getKey(), value);
+
+                    final Optional<Float> cachedResult = HyperParamResultManager
+                            .getResult(copiedHyperParameter);
+                    if (cachedResult.isPresent()) {
+                        return cachedResult.get();
+                    }
+
                     final String configFilePath = GeneratedFileManager
                             .getHyperParameterConfigFileFullPath(copiedHyperParameter,
                                     multiValueKeys);
@@ -231,6 +242,9 @@ public class Laozhongyi {
                         final String log = FileUtils.readFileToString(new File(logFileFullPath),
                                 Charsets.UTF_8);
                         final float result = logResult(log);
+
+                        HyperParamResultManager.putResult(currentHyperParameter, result);
+
                         return result;
                     } catch (final RuntimeException e) {
                         e.printStackTrace();
@@ -270,16 +284,19 @@ public class Laozhongyi {
         }
         Preconditions.checkState(bestIndex != -1);
 
-        if (bestResult > best.getRight()) {
-            best.setRight(bestResult);
+        synchronized (Laozhongyi.class) {
+            if (bestResult > best.getRight()) {
+                best.setRight(bestResult);
 
-            final Map<String, String> bestParams = Maps.newTreeMap();
-            for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
-                bestParams.put(entry.getKey(), entry.getValue());
+                final Map<String, String> bestParams = Maps.newTreeMap();
+                for (final Entry<String, String> entry : currentHyperParameter.entrySet()) {
+                    bestParams.put(entry.getKey(), entry.getValue());
+                }
+                bestParams.put(item.getKey(), item.getValues().get(bestIndex));
+
+                best.setLeft(bestParams);
+                strategy.storeBest();
             }
-            bestParams.put(item.getKey(), item.getValues().get(bestIndex));
-
-            best.setLeft(bestParams);
         }
 
         final int suitableIndex = strategy.chooseSuitableIndex(results);
