@@ -62,3 +62,12 @@ usage: laozhonghi
  -strategy表示搜索策略，取值为base时是坐标下降法，sa时是模拟退火，sar是模拟退火算法中温度衰减的比率，sat是初始温度
  
  -wd表示进程的工作目录，这允许被调参程序内使用相对路径，可选
+
+完整命令的例子：
+```Bash
+cd target
+java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.config\
+-c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"\
+-sar 0.9 -sat 1 -strategy sa -rt 5
+```
+程序启动时会在home目录生成带有时间戳后缀的log目录和超参数配置文件目录
