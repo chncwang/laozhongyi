@@ -50,7 +50,7 @@ usage: laozhonghi
  -s <arg>          scope file path
  -sar <arg>        simulated annealing ratio
  -sat <arg>        simulated annealing initial temperature
- -strategy <arg>   base or sa
+ -strategy <arg>   base or sa or vsa
  -wd <arg>         working directory
  ```
  -c表示运行程序时的命令，需要加引号，如"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"，{}将在老中医运行时被替换成超参数配置文件的路径
@@ -59,7 +59,7 @@ usage: laozhonghi
  
  -s表示调参范围的配置文件的路径
  
- -strategy表示搜索策略，取值为base时是坐标下降法，sa时是模拟退火，sar是模拟退火算法中温度衰减的比率，sat是初始温度
+ -strategy表示搜索策略，取值为base时是坐标下降法，sa时是模拟退火，sar是模拟退火算法中温度衰减的比率，sat是初始温度，vsa是一种模拟退火的变种策略
  
  -wd表示进程的工作目录，这允许被调参程序内使用相对路径，可选
 
@@ -71,3 +71,15 @@ java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.con
 -sar 0.9 -sat 1 -strategy sa -rt 5
 ```
 程序启动时会在home目录生成带有时间戳后缀的log目录和超参数配置文件目录
+# 进程管理
+* 老中医支持多进程调参，目前最多8进程
+* 进程需要自己能停止运行，在达到运行时间上限时会被kill
+# 搜索策略
+## 坐标下降法
+每次对某种超参数，取一组候选值中表现最好的值，往复循环，直至收敛
+## 模拟退火
+为了解决坐标下降法太容易收敛到局部最优解，引入了模拟退火的策略
+## 变种模拟退火
+模拟退火策略每次只会移动到表现最好的点，这个策略允许以一定概率移动到所有的点，但是会随着温度的降低收敛于最好的点，详见VariantSimulatedAnnealing.java
+
+这两种模拟退火都会在收敛时，将历史表现最好的点作为起点再次搜索，并恢复当时的温度。
