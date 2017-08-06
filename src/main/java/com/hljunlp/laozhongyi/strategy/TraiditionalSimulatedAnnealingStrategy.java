@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 
-public abstract class TraiditionalSimulatedAnnealingStrategy extends SimulatedAnnealingStrategy {
+public class TraiditionalSimulatedAnnealingStrategy extends SimulatedAnnealingStrategy {
     public TraiditionalSimulatedAnnealingStrategy(final float r, final float t) {
         super(r, t);
     }

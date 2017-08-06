@@ -43,6 +43,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.hljunlp.laozhongyi.strategy.BaseStrategy;
 import com.hljunlp.laozhongyi.strategy.Strategy;
+import com.hljunlp.laozhongyi.strategy.TraiditionalSimulatedAnnealingStrategy;
 import com.hljunlp.laozhongyi.strategy.VariantSimulatedAnnealingStrategy;
 
 public class Laozhongyi {
@@ -102,7 +103,7 @@ public class Laozhongyi {
         } else if (strategyStr.equals("sa")) {
             final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
             final float t = Float.valueOf(cmd.getOptionValue("sat"));
-            strategy = new VariantSimulatedAnnealingStrategy(ratio, t);
+            strategy = new TraiditionalSimulatedAnnealingStrategy(ratio, t);
         } else if (strategyStr.equals("vsa")) {
             final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
             final float t = Float.valueOf(cmd.getOptionValue("sat"));
