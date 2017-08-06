@@ -143,6 +143,10 @@ public class Laozhongyi {
                         modifiedKey = item.getKey();
                         params.put(item.getKey(), result.getLeft());
                     }
+                    System.out.println("suitable params now:");
+                    for (final Entry<String, String> entry : params.entrySet()) {
+                        System.out.println(entry.getKey() + ": " + entry.getValue());
+                    }
                     System.out.println("best result:" + bestPair.getRight());
                     System.out.println("best params now:");
                     for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
@@ -243,7 +247,7 @@ public class Laozhongyi {
                                 Charsets.UTF_8);
                         final float result = logResult(log);
 
-                        HyperParamResultManager.putResult(currentHyperParameter, result);
+                        HyperParamResultManager.putResult(copiedHyperParameter, result);
 
                         return result;
                     } catch (final RuntimeException e) {

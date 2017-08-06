@@ -32,6 +32,11 @@ public class SimulatedAnnealingStrategy implements Strategy {
             sum += exp;
         }
 
+        for (int i = 0; i < exps.size(); ++i) {
+            System.out.print("SimulatedAnnealingStrategy chooseSuitableIndex " + i + " prob:"
+                    + exps.get(i) / sum);
+        }
+
         final double rand = mRandom.nextDouble() * sum;
 
         double sum2 = 0;
