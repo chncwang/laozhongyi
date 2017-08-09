@@ -1,6 +1,5 @@
 package com.hljunlp.laozhongyi.process;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +24,7 @@ public class ProcessManager {
         mProcessCountLimit = processCountLimit;
         mProcessRuntimeLimit = processRuntimeLimit;
         for (int i = 1; i < 100; ++i) {
-            mRunnableMap.put(i, Collections.emptyList());
+            mRunnableMap.put(i, Lists.newArrayList());
         }
     }
 
@@ -40,11 +39,8 @@ public class ProcessManager {
             return;
         }
 
-        List<ParamsAndCallable> waitingList = mRunnableMap.get(triedTimes);
-        if (waitingList == null) {
-            waitingList = Lists.newArrayList();
-            mRunnableMap.put(triedTimes, waitingList);
-        }
+        final List<ParamsAndCallable> waitingList = mRunnableMap.get(triedTimes);
+        Preconditions.checkNotNull(waitingList);
 
         waitingList.add(paramsAndCallable);
     }
