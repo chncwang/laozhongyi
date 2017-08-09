@@ -16,12 +16,10 @@ import com.hljunlp.laozhongyi.HyperParamResultManager;
 public class ProcessManager {
     public static final int INITIAL_RUNTIME_IN_MINUTES = 5;
     private static final int K = 2;
-    private final int mProcessCountLimit;
     private final int mProcessRuntimeLimit;
     private final Map<Integer, List<ParamsAndCallable>> mRunnableMap = Maps.newTreeMap();
 
-    public ProcessManager(final int processCountLimit, final int processRuntimeLimit) {
-        mProcessCountLimit = processCountLimit;
+    public ProcessManager(final int processRuntimeLimit) {
         mProcessRuntimeLimit = processRuntimeLimit;
         for (int i = 1; i < 100; ++i) {
             mRunnableMap.put(i, Lists.newArrayList());
@@ -45,12 +43,16 @@ public class ProcessManager {
         waitingList.add(paramsAndCallable);
     }
 
-    public synchronized Optional<Pair<List<ParamsAndCallable>, Integer>> timeToRunCallables() {
+    public synchronized Optional<Pair<List<ParamsAndCallable>, Integer>> timeToRunCallables(
+            final int left) {
         validate();
+        if (left <= 0) {
+            return Optional.empty();
+        }
         final List<ParamsAndCallable> result = Lists.newArrayList();
         for (int i = 1; i < 100; ++i) {
             final List<ParamsAndCallable> paramsAndCallables = mRunnableMap.get(i);
-            if (paramsAndCallables.size() >= mProcessCountLimit) {
+            if (paramsAndCallables.size() >= left) {
                 final List<ParamsAndCallable> sortedParamsAndCallables = paramsAndCallables.stream()
                         .sorted((a, b) -> Float.compare(HyperParamResultManager
                                 .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
@@ -59,12 +61,12 @@ public class ProcessManager {
                                         .get()))
                         .collect(Collectors.toList());
 
-                for (int j = 0; j < mProcessCountLimit; ++j) {
+                for (int j = 0; j < left; ++j) {
                     result.add(sortedParamsAndCallables.get(j));
                 }
 
                 final List<ParamsAndCallable> removed = Lists.newArrayList();
-                for (int j = mProcessCountLimit; j < sortedParamsAndCallables.size(); ++j) {
+                for (int j = left; j < sortedParamsAndCallables.size(); ++j) {
                     removed.add(sortedParamsAndCallables.get(j));
                 }
                 mRunnableMap.put(i, removed);

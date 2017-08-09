@@ -120,8 +120,7 @@ public class Laozhongyi {
         Map<String, String> params = initHyperParameters(items, random);
         final Set<String> multiValueKeys = getMultiValueKeys(items);
         final ExecutorService executorService = Executors.newFixedThreadPool(PROCESS_COUNT_LIMIT);
-        final ProcessManager processManager = new ProcessManager(PROCESS_COUNT_LIMIT,
-                runtimeMinutes);
+        final ProcessManager processManager = new ProcessManager(runtimeMinutes);
 
         while (true) {
             String modifiedKey = StringUtils.EMPTY;
@@ -201,9 +200,11 @@ public class Laozhongyi {
             paramsAndCallables.add(new ParamsAndCallable(copiedHyperParameter, callable));
         }
 
+        int leftCount = PROCESS_COUNT_LIMIT - item.getValues().size();
         while (true) {
             final Optional<Pair<List<ParamsAndCallable>, Integer>> timeToRunCallables = processManager
-                    .timeToRunCallables();
+                    .timeToRunCallables(leftCount);
+            leftCount = PROCESS_COUNT_LIMIT;
             if (!timeToRunCallables.isPresent()) {
                 break;
             }
@@ -225,7 +226,8 @@ public class Laozhongyi {
             final Pair<Float, Boolean> futureResult;
             try {
                 futureResult = futures.get(i).get();
-                System.out.println("key:" + item.getKey() + " value:" + item.getValues().get(i)
+                System.out.println("key:" + item.getKey() + " value:"
+                        + paramsAndCallables.get(i).getParams().get(item.getKey())
                         + " futureResult:" + futureResult);
                 if (futureResult.getRight()) {
                     processManager.addToLongerRuntimeWaitingList(paramsAndCallables.get(i));
