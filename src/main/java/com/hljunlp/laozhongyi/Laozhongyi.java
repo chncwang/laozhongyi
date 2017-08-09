@@ -210,6 +210,8 @@ public class Laozhongyi {
 
             final List<ParamsAndCallable> left = timeToRunCallables.get().getLeft();
             for (final ParamsAndCallable paramsAndCallable : left) {
+                System.out.println("try again processes: tried time is "
+                        + paramsAndCallable.getCallable().getTriedTimes());
                 final Future<Pair<Float, Boolean>> future = executorService
                         .submit(paramsAndCallable.getCallable());
                 futures.add(future);
