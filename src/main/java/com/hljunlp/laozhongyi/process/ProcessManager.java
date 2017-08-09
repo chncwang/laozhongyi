@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.hljunlp.laozhongyi.HyperParamResultManager;
 
 public class ProcessManager {
     public static final int INITIAL_RUNTIME_IN_MINUTES = 5;
@@ -53,13 +55,21 @@ public class ProcessManager {
         for (int i = 1; i < 100; ++i) {
             final List<ParamsAndCallable> paramsAndCallables = mRunnableMap.get(i);
             if (paramsAndCallables.size() >= mProcessCountLimit) {
+                final List<ParamsAndCallable> sortedParamsAndCallables = paramsAndCallables.stream()
+                        .sorted((a, b) -> Float.compare(HyperParamResultManager
+                                .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
+                                HyperParamResultManager
+                                        .getResult(a.getParams(), a.getCallable().getTriedTimes())
+                                        .get()))
+                        .collect(Collectors.toList());
+
                 for (int j = 0; j < mProcessCountLimit; ++j) {
-                    result.add(paramsAndCallables.get(j));
+                    result.add(sortedParamsAndCallables.get(j));
                 }
 
                 final List<ParamsAndCallable> removed = Lists.newArrayList();
-                for (int j = mProcessCountLimit; j < paramsAndCallables.size(); ++j) {
-                    removed.add(paramsAndCallables.get(j));
+                for (int j = mProcessCountLimit; j < sortedParamsAndCallables.size(); ++j) {
+                    removed.add(sortedParamsAndCallables.get(j));
                 }
                 mRunnableMap.put(i, removed);
 
