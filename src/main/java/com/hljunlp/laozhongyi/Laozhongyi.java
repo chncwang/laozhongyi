@@ -130,14 +130,14 @@ public class Laozhongyi {
                     continue;
                 }
                 System.out.println("item:" + item);
-                final Pair<String, Float> result = tryItem(item, multiValueKeys, params, programCmd,
-                        executorService, strategy, bestPair, Optional.ofNullable(workingDirStr),
-                        runtimeMinutes, processManager);
+                final Pair<Map<String, String>, Float> result = tryItem(item, multiValueKeys,
+                        params, programCmd, executorService, strategy, bestPair,
+                        Optional.ofNullable(workingDirStr), runtimeMinutes, processManager);
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
                 if (!result.getLeft().equals(params.get(item.getKey()))) {
                     modifiedKey = item.getKey();
-                    params.put(item.getKey(), result.getLeft());
+                    params = result.getLeft();
                 }
                 System.out.println("suitable params now:");
                 for (final Entry<String, String> entry : params.entrySet()) {
@@ -179,7 +179,7 @@ public class Laozhongyi {
         return result;
     }
 
-    private static Pair<String, Float> tryItem(final HyperParameterScopeItem item,
+    private static Pair<Map<String, String>, Float> tryItem(final HyperParameterScopeItem item,
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
             final String cmdString, final ExecutorService executorService, final Strategy strategy,
             final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir,
@@ -246,8 +246,7 @@ public class Laozhongyi {
         for (int i = 0; i < results.size(); ++i) {
             if (results.get(i) > localBestResult) {
                 localBestResult = results.get(i);
-                localBestParams = Utils.modifiedNewMap(localBestParams, item.getKey(),
-                        item.getValues().get(i));
+                localBestParams = paramsAndCallables.get(i).getParams();
             }
         }
         Preconditions.checkState(!localBestParams.isEmpty());
@@ -265,7 +264,8 @@ public class Laozhongyi {
         final int originalIndex = item.getValues().indexOf(originalValue);
         final int suitableIndex = strategy.chooseSuitableIndex(results, originalIndex);
 
-        return ImmutablePair.of(item.getValues().get(suitableIndex), results.get(suitableIndex));
+        return ImmutablePair.of(paramsAndCallables.get(suitableIndex).getParams(),
+                results.get(suitableIndex));
     }
 
     private static Set<String> getMultiValueKeys(final List<HyperParameterScopeItem> items) {
