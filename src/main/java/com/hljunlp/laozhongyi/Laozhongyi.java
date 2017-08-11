@@ -162,6 +162,58 @@ public class Laozhongyi {
                 }
             }
         }
+
+        while (true) {
+            final Optional<Pair<List<ParamsAndCallable>, Integer>> pairOptional = processManager
+                    .removeCallables();
+            if (!pairOptional.isPresent()) {
+                break;
+            }
+            final Pair<List<ParamsAndCallable>, Integer> pair = pairOptional.get();
+            final List<ParamsAndCallable> left = pair.getLeft();
+            final List<Future<Pair<Float, Boolean>>> futures = Lists.newArrayList();
+            for (final ParamsAndCallable paramsAndCallable : left) {
+                final ShellProcess callable = paramsAndCallable.getCallable();
+                final Future<Pair<Float, Boolean>> future = executorService.submit(callable);
+                futures.add(future);
+            }
+
+            for (int i = 0; i < futures.size(); ++i) {
+                final Pair<Float, Boolean> futureResult;
+                try {
+                    futureResult = futures.get(i).get();
+                    System.out.println("futureResult:" + futureResult);
+                    final ParamsAndCallable paramsAndCallable = left.get(i);
+                    final Map<String, String> p = paramsAndCallable.getParams();
+                    for (final Map.Entry<String, String> entry : p.entrySet()) {
+                        System.out.println("key:" + entry.getKey() + " value:" + entry.getValue());
+                    }
+
+                    if (futureResult.getRight()) {
+                        processManager.addToLongerRuntimeWaitingList(paramsAndCallable);
+                    }
+
+                    synchronized (Laozhongyi.class) {
+                        if (bestPair.getRight() < futureResult.getLeft()) {
+                            bestPair.setRight(futureResult.getLeft());
+                            bestPair.setLeft(paramsAndCallable.getParams());
+
+                            System.out.println("bestResult:" + bestPair.getRight());
+                            for (final Map.Entry<String, String> entry : bestPair.getLeft()
+                                    .entrySet()) {
+                                System.out.println(
+                                        "key:" + entry.getKey() + " value:" + entry.getValue());
+                            }
+                        }
+                    }
+                } catch (final InterruptedException e) {
+                    throw new IllegalStateException(e);
+                } catch (final ExecutionException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+
         System.out.println("hyperparameter adjusted, the best result is " + bestPair.getRight());
         System.out.println("best hyperparameteres:");
         for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
@@ -200,27 +252,6 @@ public class Laozhongyi {
             paramsAndCallables.add(new ParamsAndCallable(copiedHyperParameter, callable));
         }
 
-        int leftCount = PROCESS_COUNT_LIMIT - item.getValues().size();
-        while (true) {
-            final Optional<Pair<List<ParamsAndCallable>, Integer>> timeToRunCallables = processManager
-                    .timeToRunCallables(leftCount);
-            leftCount = PROCESS_COUNT_LIMIT;
-            if (!timeToRunCallables.isPresent()) {
-                break;
-            }
-
-            final List<ParamsAndCallable> left = timeToRunCallables.get().getLeft();
-            for (final ParamsAndCallable paramsAndCallable : left) {
-                System.out.println("try again processes: tried time is "
-                        + paramsAndCallable.getCallable().getTriedTimes());
-                final Future<Pair<Float, Boolean>> future = executorService
-                        .submit(paramsAndCallable.getCallable());
-                futures.add(future);
-                paramsAndCallables.add(new ParamsAndCallable(paramsAndCallable.getParams(),
-                        paramsAndCallable.getCallable()));
-            }
-        }
-
         final List<Float> results = Lists.newArrayList();
         for (int i = 0; i < futures.size(); ++i) {
             final Pair<Float, Boolean> futureResult;
@@ -254,7 +285,6 @@ public class Laozhongyi {
         synchronized (Laozhongyi.class) {
             if (localBestResult > best.getRight()) {
                 best.setRight(localBestResult);
-
                 best.setLeft(localBestParams);
                 strategy.storeBest();
             }

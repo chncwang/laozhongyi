@@ -43,35 +43,23 @@ public class ProcessManager {
         waitingList.add(paramsAndCallable);
     }
 
-    public synchronized Optional<Pair<List<ParamsAndCallable>, Integer>> timeToRunCallables(
-            final int left) {
+    public synchronized Optional<Pair<List<ParamsAndCallable>, Integer>> removeCallables() {
         validate();
-        if (left <= 0) {
-            return Optional.empty();
-        }
-        final List<ParamsAndCallable> result = Lists.newArrayList();
         for (int i = 1; i < 100; ++i) {
             final List<ParamsAndCallable> paramsAndCallables = mRunnableMap.get(i);
-            if (paramsAndCallables.size() >= left) {
-                final List<ParamsAndCallable> sortedParamsAndCallables = paramsAndCallables.stream()
-                        .sorted((a, b) -> Float.compare(HyperParamResultManager
-                                .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
-                                HyperParamResultManager
-                                        .getResult(a.getParams(), a.getCallable().getTriedTimes())
-                                        .get()))
-                        .collect(Collectors.toList());
+            final List<ParamsAndCallable> sortedParamsAndCallables = paramsAndCallables.stream()
+                    .sorted((a, b) -> Float.compare(HyperParamResultManager
+                            .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
+                            HyperParamResultManager
+                                    .getResult(a.getParams(), a.getCallable().getTriedTimes())
+                                    .get()))
+                    .collect(Collectors.toList());
 
-                for (int j = 0; j < left; ++j) {
-                    result.add(sortedParamsAndCallables.get(j));
-                }
-
+            if (!sortedParamsAndCallables.isEmpty()) {
                 final List<ParamsAndCallable> removed = Lists.newArrayList();
-                for (int j = left; j < sortedParamsAndCallables.size(); ++j) {
-                    removed.add(sortedParamsAndCallables.get(j));
-                }
                 mRunnableMap.put(i, removed);
 
-                return Optional.of(ImmutablePair.of(result, i));
+                return Optional.of(ImmutablePair.of(sortedParamsAndCallables, i));
             }
         }
 
