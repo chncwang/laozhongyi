@@ -70,6 +70,7 @@ java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.con
 -c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"\
 -sar 0.9 -sat 1 -strategy sa -rt 5
 ```
+推荐在screen下跑，不推荐用类似 > log 2>&1 &这样的命令跑（容易跑着跑着进程就没了，原因不明，感觉是跑jar包都有的问题，知道原因的请告诉我^_^）
 程序启动时会在home目录生成带有时间戳后缀的log目录和超参数配置文件目录
 # 功能介绍
 ## 进程管理
