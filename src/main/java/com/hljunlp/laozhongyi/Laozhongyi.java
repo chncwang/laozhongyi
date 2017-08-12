@@ -148,6 +148,9 @@ public class Laozhongyi {
                 for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
                     System.out.println(entry.getKey() + ": " + entry.getValue());
                 }
+                final String logFileFullPath = GeneratedFileManager
+                        .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
+                System.out.println("best log path is " + logFileFullPath);
             }
             strategy.iterationEnd();
 
@@ -204,6 +207,9 @@ public class Laozhongyi {
                                 System.out.println(
                                         "key:" + entry.getKey() + " value:" + entry.getValue());
                             }
+                            final String logFileFullPath = GeneratedFileManager
+                                    .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
+                            System.out.println("best log: " + logFileFullPath);
                         }
                     }
                 } catch (final InterruptedException e) {
