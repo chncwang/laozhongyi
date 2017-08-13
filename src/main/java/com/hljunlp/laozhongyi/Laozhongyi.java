@@ -156,12 +156,9 @@ public class Laozhongyi {
 
             if (modifiedKey.equals(StringUtils.EMPTY)) {
                 if (params.equals(bestPair.getLeft())) {
-                    if (strategy.ensureIfStop(true)) {
-                        break;
-                    }
+                    break;
                 } else {
                     params = bestPair.getLeft();
-                    strategy.restoreBest();
                 }
             }
         }
