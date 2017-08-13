@@ -37,8 +37,6 @@ import com.hljunlp.laozhongyi.strategy.TraiditionalSimulatedAnnealingStrategy;
 import com.hljunlp.laozhongyi.strategy.VariantSimulatedAnnealingStrategy;
 
 public class Laozhongyi {
-    private static final int PROCESS_COUNT_LIMIT = 8;
-
     public static void main(final String[] args) {
         final Options options = new Options();
         final Option scope = new Option("s", true, "scope file path");
@@ -68,6 +66,10 @@ public class Laozhongyi {
         final Option runtimeOpt = new Option("rt", true, "program runtime upper bound in minutes");
         runtimeOpt.setRequired(true);
         options.addOption(runtimeOpt);
+
+        final Option processCountOpt = new Option("pc", true, "process count upper bound");
+        processCountOpt.setRequired(true);
+        options.addOption(processCountOpt);
 
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cmd;
@@ -110,6 +112,8 @@ public class Laozhongyi {
 
         final int runtimeMinutes = Integer.valueOf(cmd.getOptionValue("rt"));
 
+        final int processCountLimit = Integer.valueOf(cmd.getOptionValue("pc"));
+
         GeneratedFileManager.mkdirForLog();
         GeneratedFileManager.mkdirForHyperParameterConfig();
 
@@ -119,7 +123,7 @@ public class Laozhongyi {
         final Random random = new Random();
         Map<String, String> params = initHyperParameters(items, random);
         final Set<String> multiValueKeys = getMultiValueKeys(items);
-        final ExecutorService executorService = Executors.newFixedThreadPool(PROCESS_COUNT_LIMIT);
+        final ExecutorService executorService = Executors.newFixedThreadPool(processCountLimit);
         final ProcessManager processManager = new ProcessManager(runtimeMinutes);
 
         while (true) {
