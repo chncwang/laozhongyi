@@ -84,7 +84,7 @@ java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.con
 ### 变种模拟退火
 模拟退火策略每次只会移动到表现最好的点，这个策略允许以一定概率移动到所有的点，但是会随着温度的降低收敛于最好的点，详见VariantSimulatedAnnealing.java
 
-这两种模拟退火都会在收敛时，将历史表现最好的点作为起点再次搜索，并恢复当时的温度。
+这两种模拟退火都会在收敛时，将历史表现最好的点作为起点再次搜索，但不恢复当时的温度。
 # Question?
 Email: chncwang@gmail.com
 
