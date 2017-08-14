@@ -139,7 +139,7 @@ public class Laozhongyi {
                         Optional.ofNullable(workingDirStr), runtimeMinutes, processManager);
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
-                if (!result.getLeft().equals(params.get(item.getKey()))) {
+                if (!result.getLeft().equals(params)) {
                     modifiedKey = item.getKey();
                     params = result.getLeft();
                 }
