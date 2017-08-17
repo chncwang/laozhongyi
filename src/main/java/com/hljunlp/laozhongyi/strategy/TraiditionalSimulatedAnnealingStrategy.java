@@ -35,6 +35,9 @@ public class TraiditionalSimulatedAnnealingStrategy extends SimulatedAnnealingSt
             return maxi;
         } else {
             final float de = max - results.get(originalIndex);
+            if (Math.abs(de) < 0.0001) {
+                return originalIndex;
+            }
             final float prob = (float) Math.exp(de / mT);
             System.out.println(
                     "TraiditionalSimulatedAnnealingStrategy chooseSuitableIndex prob is " + prob);

@@ -126,7 +126,11 @@ public class Laozhongyi {
         final ExecutorService executorService = Executors.newFixedThreadPool(processCountLimit);
         final ProcessManager processManager = new ProcessManager(runtimeMinutes);
 
+        int count = 0;
         while (true) {
+            if (++count > 100000) {
+                break;
+            }
             String modifiedKey = StringUtils.EMPTY;
             for (final HyperParameterScopeItem item : items) {
                 Preconditions.checkState(!item.getValues().isEmpty());
