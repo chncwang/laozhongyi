@@ -159,6 +159,9 @@ public class Laozhongyi {
                 final String logFileFullPath = GeneratedFileManager
                         .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
                 System.out.println("best log path is " + logFileFullPath);
+                final String hyperPath = GeneratedFileManager
+                        .getHyperParameterConfigFileFullPath(bestPair.getLeft(), multiValueKeys);
+                System.out.println("best hyper path is " + hyperPath);
             }
             strategy.iterationEnd();
 
@@ -215,6 +218,10 @@ public class Laozhongyi {
                             final String logFileFullPath = GeneratedFileManager
                                     .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
                             System.out.println("best log: " + logFileFullPath);
+
+                            final String hyperPath = GeneratedFileManager
+                                    .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
+                            System.out.println("hyper: " + hyperPath);
                         }
                     }
                 } catch (final InterruptedException e) {

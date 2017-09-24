@@ -52,7 +52,7 @@ public class GeneratedFileManager {
 
         String fileName = StringUtils.EMPTY;
         for (final String key : keys) {
-            fileName += key + config.get(key);
+            fileName += key + config.get(key).replace("/", "-");
         }
 
         return FilenameUtils.concat(mHyperParameterConfigDirPath, fileName);
