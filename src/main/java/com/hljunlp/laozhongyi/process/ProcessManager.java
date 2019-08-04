@@ -14,7 +14,7 @@ import com.google.common.collect.Maps;
 import com.hljunlp.laozhongyi.HyperParamResultManager;
 
 public class ProcessManager {
-    public static final int INITIAL_RUNTIME_IN_MINUTES = 5;
+    public static final int INITIAL_RUNTIME_IN_MINUTES = 10000;
     private static final int K = 2;
     private final int mProcessRuntimeLimit;
     private final Map<Integer, List<ParamsAndCallable>> mRunnableMap = Maps.newTreeMap();
