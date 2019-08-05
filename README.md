@@ -4,9 +4,10 @@
 * 充分利用计算资源，睡觉时也在调参
 * 老中医要求被调参的程序在训练集数据表现足够好时停止运行，养成不浪费计算资源的好习惯
 * 现有的一些自动调参程序基于python，老中医基于字符串（比如对log文件的解析）
-# 使用方法
+# 使用说明
+本项目基于Java 8和Maven，可以从源代码运行`mvn clean package`生成`target`文件夹，也可以往[releases](https://github.com/chncwang/laozhongyi/releases)页面下载。
 ## 调参范围配置文件样例
-**params.config**：
+**laozhongyi.config**：
 ```
 adaAlpha,0.01,0.001,0.0001
 wordEmbFineTune,true,false
@@ -43,10 +44,7 @@ wordEmbFineTune = true
 wordEmbSize = 100
 wordFile = /home/wqs/w2v.txt
 ```
-## 运行
-项目基于Java 8和Maven，可以从源代码运行mvn clean package生成target文件夹，也可以往[releases](https://github.com/chncwang/laozhongyi/releases)页面下载。
-
-运行时有以下参数：
+## 运行参数：
 ```
 usage: laozhonghi
  -c <arg>          cmd
@@ -70,12 +68,15 @@ usage: laozhonghi
 
  * `-pc`表示并行的进程数
 
-**完整命令的例子：**
+## 运行
 
 ```Bash
+git clone https://github.com/chncwang/laozhongyi.git
+cd laozhongyi
+mvn clean package
 cd target
-java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.config\
--c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}" -sar 0.9 -sat 1 -strategy sa -rt 5 -pc 4
+java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/user/laozhongyi.config\
+ -c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}" -sar 0.9 -sat 1 -strategy sa -rt 5 -pc 4
 ```
 
 **推荐在screen下跑，不推荐用类似 `> log 2>&1 &`这样的命令跑**（容易跑着跑着进程就没了，原因不明，感觉是跑jar包都有的问题，知道原因的大神请告诉我^_^）
