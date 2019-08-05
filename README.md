@@ -5,7 +5,8 @@
 * 老中医要求被调参的程序在训练集数据表现足够好时停止运行，养成不浪费计算资源的好习惯
 * 现有的一些自动调参程序基于python，老中医基于字符串（比如对log文件的解析）
 # 使用方法
-## 调参范围的配置文件例子params.config：
+## 调参范围配置文件样例
+**params.config**：
 ```
 adaAlpha,0.01,0.001,0.0001
 wordEmbFineTune,true,false
@@ -26,7 +27,9 @@ wordEmbSize,100
 * 程序需要打log的标准输出（老中医会把标准输出重定向到合适的log文件），log中需要有类似laozhongyi_0.8这样的字段，其中laozhongyi_是为了便于定位，0.8是程序在开发集上的表现
 * 程序需要解析老中医输出的超参数配置文件，并且支持把超参数配置文件的路径作为程序运行参数
 
-超参数配置文件的格式如下：
+**超参数配置文件样例：**
+**hyper.config**
+
 ```
 adaAlpha = 0.0001
 batchSize = 16
@@ -42,6 +45,7 @@ wordFile = /home/wqs/w2v.txt
 ```
 ## 运行
 项目基于Java 8和Maven，可以从源代码运行mvn clean package生成target文件夹，也可以往[releases](https://github.com/chncwang/laozhongyi/releases)页面下载。
+
 运行时有以下参数：
 ```
 usage: laozhonghi
@@ -52,25 +56,30 @@ usage: laozhonghi
  -sat <arg>        simulated annealing initial temperature
  -strategy <arg>   base or sa or vsa
  -wd <arg>         working directory
+ -pc <arg>         number of parallel processe
  ```
- -c表示运行程序时的命令，需要加引号，如"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"，{}将在老中医运行时被替换成超参数配置文件的路径
+* `-c`表示运行程序时的命令，需要加引号，如`"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"`，`{}`将在老中医运行时被替换成超参数配置文件`hyper.config`的路径
  
- -rt表示每个进程运行时间的上限，单位是分钟，比如-rt 20表示一个进程如果在运行20分钟后，仍没有结束运行（比如因为训练集仍然没有足够好的拟合），则强制结束
+ * `-rt`表示每个进程运行时间的上限，单位是分钟，比如-rt 20表示一个进程如果在运行20分钟后，仍没有结束运行（比如因为训练集仍然没有足够好的拟合），则强制结束
  
- -s表示调参范围的配置文件的路径
+ * `-s`表示调参范围的配置文件的路径
  
- -strategy表示搜索策略，取值为base时是坐标下降法，sa时是模拟退火，sar是模拟退火算法中温度衰减的比率，sat是初始温度，vsa是一种模拟退火的变种策略
+ * `-strategy`表示搜索策略，取值为`base`时是坐标下降法，`sa`时是模拟退火，`sar`是模拟退火算法中温度衰减的比率，`sat`是初始温度，`vsa`是一种模拟退火的变种策略
  
- -wd表示进程的工作目录，这允许被调参程序内使用相对路径，可选
+ * `-wd`表示进程的工作目录，这允许被调参程序内使用相对路径，可选
 
-完整命令的例子：
+ * `-pc`表示并行的进程数
+
+**完整命令的例子：**
+
 ```Bash
 cd target
 java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.config\
--c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"\
--sar 0.9 -sat 1 -strategy sa -rt 5
+-c "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}" -sar 0.9 -sat 1 -strategy sa -rt 5 -pc 4
 ```
-推荐在screen下跑，不推荐用类似 > log 2>&1 &这样的命令跑（容易跑着跑着进程就没了，原因不明，感觉是跑jar包都有的问题，知道原因的大神请告诉我^_^）
+
+**推荐在screen下跑，不推荐用类似 `> log 2>&1 &`这样的命令跑**（容易跑着跑着进程就没了，原因不明，感觉是跑jar包都有的问题，知道原因的大神请告诉我^_^）
+
 程序启动时会在home目录生成带有时间戳后缀的log目录和超参数配置文件目录
 # 功能介绍
 ## 进程管理
