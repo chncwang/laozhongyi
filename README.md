@@ -56,7 +56,7 @@ usage: laozhonghi
  -wd <arg>         working directory
  -pc <arg>         number of parallel processe
  ```
-* `-c`表示运行程序时的命令，需要加引号，如`"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"`，`{}`将在老中医运行时被替换成超参数配置文件`hyper.config`的路径
+* `-c`表示运行程序时的命令，需要加引号，如`"python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"`，`{}`将在老中医运行时被替换成由调参程序生成的超参数配置文件的路径
  
  * `-rt`表示每个进程运行时间的上限，单位是分钟，比如-rt 20表示一个进程如果在运行20分钟后，仍没有结束运行（比如因为训练集仍然没有足够好的拟合），则强制结束
  
