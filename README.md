@@ -87,5 +87,3 @@ java -cp "*:lib/*" com.hljunlp.laozhongyi.Laozhongyi -s /home/wqs/laozhongyi.con
 这两种模拟退火都会在收敛时，将历史表现最好的点作为起点再次搜索，但不恢复当时的温度。
 # Question?
 Email: chncwang@gmail.com
-
-[黑龙江大学NLP实验室](https://nlp.heida.me/)
