@@ -37,17 +37,12 @@ usage: laozhonghi
  -strategy <arg>   base or sa
  -wd <arg>         working directory
  ``` 
--c means your program's command line which should be quoted, e.g., "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"，where {} will be replaced with the hyperparameter config file's path by Laozhongyi.
- 
--rt means the upper limit of the running time of each process in minutes. For example, *-rt 20* means that if a process does not exit after 20 minutes, it will be aborted.
-
--s means the path to the config file for the hyperparameter tuning range.
-
--strategy means the search strategy, with *base* referring to the coordinate descent method, and *sa* referring to the simulated annealing method.
-
--sar means the temperature's decay rate.
-
--sat means the initial temperature.
+* -c means your program's command line which should be quoted, e.g., "python3 train.py -train train.txt -dev dev.txt -test test.txt -hyper {}"，where {} will be replaced with the hyperparameter config file's path by Laozhongyi.
+* -rt means the upper limit of the running time of each process in minutes. For example, *-rt 20* means that if a process does not exit after 20 minutes, it will be aborted.
+* -s means the path to the config file for the hyperparameter tuning range.
+* -strategy means the search strategy, with *base* referring to the coordinate descent method, and *sa* referring to the simulated annealing method.
+* -sar means the temperature's decay rate.
+* -sat means the initial temperature.
 
 A complete example is as follows:
 ```Bash
