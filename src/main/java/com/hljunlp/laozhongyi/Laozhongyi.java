@@ -236,6 +236,7 @@ public class Laozhongyi {
         for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
+        executorService.shutdown();
     }
 
     private static Map<String, String> initHyperParameters(
