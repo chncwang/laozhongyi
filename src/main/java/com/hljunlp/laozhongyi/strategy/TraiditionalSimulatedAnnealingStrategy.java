@@ -10,7 +10,7 @@ public class TraiditionalSimulatedAnnealingStrategy extends SimulatedAnnealingSt
     }
 
     @Override
-    public int chooseSuitableIndex(final List<Float> results, final int originalIndex) {
+    public int chooseSuitableIndex(final List<Float> results, final int originalIndex, final boolean isFirstTry) {
         float max = -1;
         int maxi = -1;
         for (int i = 0; i < results.size(); ++i) {
@@ -28,10 +28,12 @@ public class TraiditionalSimulatedAnnealingStrategy extends SimulatedAnnealingSt
         System.out.println(
                 "TraiditionalSimulatedAnnealingStrategy chooseSuitableIndex: max result is " + max);
 
-        if (max > results.get(originalIndex)) {
-            System.out.println(
-                    "TraiditionalSimulatedAnnealingStrategy chooseSuitableIndex: original value is "
-                            + results.get(originalIndex));
+        if (isFirstTry || max > results.get(originalIndex)) {
+            if (!isFirstTry) {
+                System.out.println(
+                        "TraiditionalSimulatedAnnealingStrategy chooseSuitableIndex: original value is "
+                                + results.get(originalIndex));
+            }
             return maxi;
         } else {
             final float de = max - results.get(originalIndex);

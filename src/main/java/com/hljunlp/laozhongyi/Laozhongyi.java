@@ -125,6 +125,7 @@ public class Laozhongyi {
         final Set<String> multiValueKeys = getMultiValueKeys(items);
         final ExecutorService executorService = Executors.newFixedThreadPool(processCountLimit);
         final ProcessManager processManager = new ProcessManager(runtimeMinutes);
+        boolean isFirstTry = true;
 
         int count = 0;
         while (true) {
@@ -140,7 +141,8 @@ public class Laozhongyi {
                 System.out.println("item:" + item);
                 final Pair<Map<String, String>, Float> result = tryItem(item, multiValueKeys,
                         params, programCmd, executorService, strategy, bestPair,
-                        Optional.ofNullable(workingDirStr), runtimeMinutes, processManager);
+                        Optional.ofNullable(workingDirStr), runtimeMinutes, processManager, isFirstTry);
+                isFirstTry = false;
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
                 if (!result.getLeft().equals(params)) {
@@ -253,7 +255,7 @@ public class Laozhongyi {
             final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
             final String cmdString, final ExecutorService executorService, final Strategy strategy,
             final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir,
-            final int runtimeMinutes, final ProcessManager processManager) {
+            final int runtimeMinutes, final ProcessManager processManager, boolean isFirstTry) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Pair<Float, Boolean>>> futures = Lists.newArrayList();
@@ -310,7 +312,7 @@ public class Laozhongyi {
 
         final String originalValue = currentHyperParameter.get(item.getKey());
         final int originalIndex = item.getValues().indexOf(originalValue);
-        final int suitableIndex = strategy.chooseSuitableIndex(results, originalIndex);
+        final int suitableIndex = strategy.chooseSuitableIndex(results, originalIndex, isFirstTry);
 
         return ImmutablePair.of(paramsAndCallables.get(suitableIndex).getParams(),
                 results.get(suitableIndex));

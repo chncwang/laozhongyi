@@ -11,7 +11,7 @@ public class VariantSimulatedAnnealingStrategy extends SimulatedAnnealingStrateg
     }
 
     @Override
-    public int chooseSuitableIndex(final List<Float> results, final int originalIndex) {
+    public int chooseSuitableIndex(final List<Float> results, final int originalIndex, final boolean isFirstTry) {
         final List<Double> exps = Lists.newArrayList();
         for (final float result : results) {
             final double exp = (float) Math.exp(result / (mT));
