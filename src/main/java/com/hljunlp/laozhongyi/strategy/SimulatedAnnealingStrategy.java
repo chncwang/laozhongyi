@@ -1,8 +1,9 @@
 package com.hljunlp.laozhongyi.strategy;
 
-import java.util.Random;
-
 import com.google.common.base.Preconditions;
+import com.hljunlp.laozhongyi.checkpoint.SimulatedAnnealingCheckPointData;
+
+import java.util.Random;
 
 public abstract class SimulatedAnnealingStrategy implements Strategy {
     protected float mT;
@@ -14,6 +15,20 @@ public abstract class SimulatedAnnealingStrategy implements Strategy {
         Preconditions.checkArgument(r > 0 && t > 0);
         mT = t;
         mR = r;
+        mRandom = new Random();
+    }
+
+    public float getTemperature() {
+        return mT;
+    }
+
+    public float getDecayRate() {
+        return mR;
+    }
+
+    public SimulatedAnnealingStrategy(final SimulatedAnnealingCheckPointData checkPointData) {
+        mT = checkPointData.getTemperature();
+        mR = checkPointData.getDecayRate();
         mRandom = new Random();
     }
 

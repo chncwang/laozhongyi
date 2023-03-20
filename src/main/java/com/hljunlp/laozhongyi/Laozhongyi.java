@@ -4,9 +4,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.hljunlp.laozhongyi.checkpoint.CheckPointData;
+import com.hljunlp.laozhongyi.checkpoint.CheckPointManager;
+import com.hljunlp.laozhongyi.checkpoint.SimulatedAnnealingCheckPointData;
+import com.hljunlp.laozhongyi.checkpoint.SimulatedAnnealingCheckPointManager;
 import com.hljunlp.laozhongyi.process.ParamsAndCallable;
 import com.hljunlp.laozhongyi.process.ShellProcess;
 import com.hljunlp.laozhongyi.strategy.BaseStrategy;
+import com.hljunlp.laozhongyi.strategy.SimulatedAnnealingStrategy;
 import com.hljunlp.laozhongyi.strategy.Strategy;
 import com.hljunlp.laozhongyi.strategy.TraiditionalSimulatedAnnealingStrategy;
 import org.apache.commons.cli.*;
@@ -49,13 +54,13 @@ public class Laozhongyi {
         saTOpt.setRequired(false);
         options.addOption(saROpt);
 
-        final Option runtimeOpt = new Option("rt", true, "program runtime upper bound in minutes");
-        runtimeOpt.setRequired(true);
-        options.addOption(runtimeOpt);
-
         final Option processCountOpt = new Option("pc", true, "process count upper bound");
         processCountOpt.setRequired(true);
         options.addOption(processCountOpt);
+
+        final Option checkPointFilePathOpt = new Option("cp", true, "check point file path");
+        checkPointFilePathOpt.setRequired(false);
+        options.addOption(checkPointFilePathOpt);
 
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cmd;
@@ -76,7 +81,7 @@ public class Laozhongyi {
         final List<HyperParameterScopeItem> items = HyperParameterScopeConfigReader
                 .read(scopeFilePath);
 
-        final Strategy strategy;
+        Strategy strategy;
         final String strategyStr = cmd.getOptionValue("strategy");
         if (strategyStr.equals("base")) {
             strategy = new BaseStrategy();
@@ -94,17 +99,44 @@ public class Laozhongyi {
 
         final int processCountLimit = Integer.parseInt(cmd.getOptionValue("pc"));
 
+        final String checkPointFilePath = cmd.getOptionValue("cp");
+        CheckPointManager checkPointManager = null;
+        CheckPointData initialCheckPointData = null;
+        if (checkPointFilePath != null) {
+            checkPointManager = strategyStr.equals("base") ?
+                    new CheckPointManager(checkPointFilePath) :
+                    new SimulatedAnnealingCheckPointManager(checkPointFilePath);
+            initialCheckPointData = checkPointManager.load();
+        }
+
+        if (initialCheckPointData != null && strategyStr.equals("sa")) {
+            SimulatedAnnealingCheckPointData saCheckPointData =
+                    (SimulatedAnnealingCheckPointData) initialCheckPointData;
+            strategy = new TraiditionalSimulatedAnnealingStrategy(saCheckPointData.getDecayRate(),
+                    saCheckPointData.getTemperature());
+        }
+
         GeneratedFileManager.mkdirForLog();
         GeneratedFileManager.mkdirForHyperParameterConfig();
 
-        final MutablePair<Map<String, String>, Float> bestPair = MutablePair
-                .of(Collections.emptyMap(), -1.f);
+        final MutablePair<Map<String, String>, Float> bestPair = initialCheckPointData == null ?
+                MutablePair.of(Collections.emptyMap(), -1.f) :
+                MutablePair.of(initialCheckPointData.getBestHyperParameters(),
+                        initialCheckPointData.getBestScore());
 
-        final Random random = new Random();
-        Map<String, String> params = initHyperParameters(items, random);
+        Map<String, String> params;
+        if (initialCheckPointData == null) {
+            final Random random = new Random();
+            params = initHyperParameters(items, random);
+        } else {
+            params = initialCheckPointData.getCurrentHyperParameters();
+        }
         final Set<String> multiValueKeys = getMultiValueKeys(items);
         final ExecutorService executorService = Executors.newFixedThreadPool(processCountLimit);
-        boolean isFirstTry = true;
+        boolean isFirstTry = initialCheckPointData == null;
+
+        int currentHyperParameterIndex = initialCheckPointData == null ? 0 :
+                initialCheckPointData.getCurrentHyperParametersIndex();
 
         int count = 0;
         while (true) {
@@ -112,7 +144,12 @@ public class Laozhongyi {
                 break;
             }
             String modifiedKey = StringUtils.EMPTY;
+            int itemIndex = -1;
             for (final HyperParameterScopeItem item : items) {
+                ++itemIndex;
+                if (itemIndex < currentHyperParameterIndex && count == 1) {
+                    continue;
+                }
                 Preconditions.checkState(!item.getValues().isEmpty());
                 if (item.getValues().size() == 1) {
                     continue;
@@ -143,6 +180,22 @@ public class Laozhongyi {
                 final String hyperPath = GeneratedFileManager
                         .getHyperParameterConfigFileFullPath(bestPair.getLeft(), multiValueKeys);
                 System.out.println("best hyper path is " + hyperPath);
+
+                if (checkPointManager != null) {
+                    final CheckPointData checkPointData;
+                    if (strategyStr.equals("sa")) {
+                        final SimulatedAnnealingStrategy saStrategy =
+                                (SimulatedAnnealingStrategy) strategy;
+                        checkPointData =
+                                new SimulatedAnnealingCheckPointData(saStrategy.getTemperature(),
+                                        saStrategy.getDecayRate(), params, itemIndex + 1,
+                                        bestPair.getLeft(), bestPair.getRight());
+                    } else {
+                        checkPointData = new CheckPointData(params, itemIndex + 1,
+                                bestPair.getLeft(), bestPair.getRight());
+                    }
+                    checkPointManager.save(checkPointData);
+                }
             }
             strategy.iterationEnd();
 

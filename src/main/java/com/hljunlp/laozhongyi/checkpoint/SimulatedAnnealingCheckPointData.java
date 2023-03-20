@@ -1,6 +1,5 @@
 package com.hljunlp.laozhongyi.checkpoint;
 
-import java.util.List;
 import java.util.Map;
 
 public class SimulatedAnnealingCheckPointData extends CheckPointData {
@@ -9,13 +8,10 @@ public class SimulatedAnnealingCheckPointData extends CheckPointData {
 
     public SimulatedAnnealingCheckPointData(final float temperature, final float decayRate,
                                             final Map<String, String> currentHyperParameters,
-                                            final float currentScore,
                                             final int currentHyperParametersIndex,
-                                            final List<Float> currentHyperParameterValues,
                                             final Map<String, String> bestHyperParameters,
                                             final float bestScore) {
-        super(currentHyperParameters, currentScore, currentHyperParametersIndex,
-                currentHyperParameterValues, bestHyperParameters, bestScore);
+        super(currentHyperParameters, currentHyperParametersIndex, bestHyperParameters, bestScore);
         this.temperature = temperature;
         this.decayRate = decayRate;
     }
