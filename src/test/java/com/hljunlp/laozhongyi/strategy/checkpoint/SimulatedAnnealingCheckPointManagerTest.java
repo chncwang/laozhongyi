@@ -1,7 +1,7 @@
-package com.hljunlp.laozhongyi.strategy;
+package com.hljunlp.laozhongyi.strategy.checkpoint;
 
-import com.hljunlp.laozhongyi.SimulatedAnnealingCheckPointData;
-import com.hljunlp.laozhongyi.SimulatedAnnealingCheckPointManager;
+import com.hljunlp.laozhongyi.checkpoint.SimulatedAnnealingCheckPointData;
+import com.hljunlp.laozhongyi.checkpoint.SimulatedAnnealingCheckPointManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,8 @@ public class SimulatedAnnealingCheckPointManagerTest {
         manager.save(data);
 
         // Load the SimulatedAnnealingCheckPointData object from the file
-        SimulatedAnnealingCheckPointData loadedData = manager.load();
+        SimulatedAnnealingCheckPointData loadedData =
+                (SimulatedAnnealingCheckPointData) manager.load();
 
         // Compare the loaded SimulatedAnnealingCheckPointData object with the original one
         Assertions.assertEquals(data.getTemperature(), loadedData.getTemperature());

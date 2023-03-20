@@ -17,4 +17,10 @@ public interface Strategy {
 
     default void restoreBest() {
     }
+
+    default void saveCheckPoint() {
+    }
+
+    default void restoreCheckPoint() {
+    }
 }
