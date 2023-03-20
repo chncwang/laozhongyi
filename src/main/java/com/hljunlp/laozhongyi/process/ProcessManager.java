@@ -1,17 +1,16 @@
 package com.hljunlp.laozhongyi.process;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.hljunlp.laozhongyi.HyperParamResultManager;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ProcessManager {
     public static final int INITIAL_RUNTIME_IN_MINUTES = 10000;
@@ -26,30 +25,13 @@ public class ProcessManager {
         }
     }
 
-    public synchronized void addToLongerRuntimeWaitingList(
-            final ParamsAndCallable paramsAndCallable) {
-        validate();
-        final int triedTimes = paramsAndCallable.getCallable().getTriedTimes();
-        Preconditions.checkArgument(triedTimes >= 1);
-        final int nextRuntimeLimit = runtimeLimitInMinutes(triedTimes);
-        if (nextRuntimeLimit > mProcessRuntimeLimit) {
-            System.out.println("callable discarded");
-            return;
-        }
-
-        final List<ParamsAndCallable> waitingList = mRunnableMap.get(triedTimes);
-        Preconditions.checkNotNull(waitingList);
-
-        waitingList.add(paramsAndCallable);
-    }
-
     public synchronized Optional<Pair<List<ParamsAndCallable>, Integer>> removeCallables() {
         validate();
         for (int i = 1; i < 100; ++i) {
             final List<ParamsAndCallable> paramsAndCallables = mRunnableMap.get(i);
             final List<ParamsAndCallable> sortedParamsAndCallables = paramsAndCallables.stream()
                     .sorted((a, b) -> Float.compare(HyperParamResultManager
-                            .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
+                                    .getResult(b.getParams(), b.getCallable().getTriedTimes()).get(),
                             HyperParamResultManager
                                     .getResult(a.getParams(), a.getCallable().getTriedTimes())
                                     .get()))

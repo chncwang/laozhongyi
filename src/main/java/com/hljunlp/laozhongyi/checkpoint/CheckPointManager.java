@@ -30,7 +30,6 @@ public class CheckPointManager {
         jsonObject.put("currentHyperParameters", data.getCurrentHyperParameters());
         jsonObject.put("currentScore", data.getCurrentScore());
         jsonObject.put("currentHyperParametersIndex", data.getCurrentHyperParametersIndex());
-        jsonObject.put("computedScoresInGroup", data.getComputedScoresInGroup());
         jsonObject.put("currentHyperParameterValues", data.getCurrentHyperParameterValues());
         jsonObject.put("bestHyperParameters", data.getBestHyperParameters());
         jsonObject.put("bestScore", data.getBestScore());
@@ -77,8 +76,7 @@ public class CheckPointManager {
                 "bestHyperParameters"));
         float bestScore = (float) jsonObject.getDouble("bestScore");
         return new CheckPointData(currentHyperParameters, currentScore,
-                currentHyperParametersIndex, computedScoresInGroup,
-                currentHyperParameterValues, bestHyperParameters, bestScore);
+                currentHyperParametersIndex, computedScoresInGroup, bestHyperParameters, bestScore);
     }
 
     public CheckPointData load() {

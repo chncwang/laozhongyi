@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.hljunlp.laozhongyi.process.ParamsAndCallable;
-import com.hljunlp.laozhongyi.process.ProcessManager;
 import com.hljunlp.laozhongyi.process.ShellProcess;
 import com.hljunlp.laozhongyi.strategy.BaseStrategy;
 import com.hljunlp.laozhongyi.strategy.Strategy;
@@ -93,8 +92,6 @@ public class Laozhongyi {
 
         final String programCmd = cmd.getOptionValue("c");
 
-        final int runtimeMinutes = Integer.parseInt(cmd.getOptionValue("rt"));
-
         final int processCountLimit = Integer.parseInt(cmd.getOptionValue("pc"));
 
         GeneratedFileManager.mkdirForLog();
@@ -107,7 +104,6 @@ public class Laozhongyi {
         Map<String, String> params = initHyperParameters(items, random);
         final Set<String> multiValueKeys = getMultiValueKeys(items);
         final ExecutorService executorService = Executors.newFixedThreadPool(processCountLimit);
-        final ProcessManager processManager = new ProcessManager(runtimeMinutes);
         boolean isFirstTry = true;
 
         int count = 0;
@@ -124,7 +120,7 @@ public class Laozhongyi {
                 System.out.println("item:" + item);
                 final Pair<Map<String, String>, Float> result = tryItem(item, multiValueKeys,
                         params, programCmd, executorService, strategy, bestPair, workingDirStr,
-                        processManager, isFirstTry);
+                        isFirstTry);
                 isFirstTry = false;
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
@@ -159,61 +155,6 @@ public class Laozhongyi {
             }
         }
 
-        while (true) {
-            final Optional<Pair<List<ParamsAndCallable>, Integer>> pairOptional = processManager
-                    .removeCallables();
-            if (!pairOptional.isPresent()) {
-                break;
-            }
-            final Pair<List<ParamsAndCallable>, Integer> pair = pairOptional.get();
-            final List<ParamsAndCallable> left = pair.getLeft();
-            final List<Future<Pair<Float, Boolean>>> futures = Lists.newArrayList();
-            for (final ParamsAndCallable paramsAndCallable : left) {
-                final ShellProcess callable = paramsAndCallable.getCallable();
-                final Future<Pair<Float, Boolean>> future = executorService.submit(callable);
-                futures.add(future);
-            }
-
-            for (int i = 0; i < futures.size(); ++i) {
-                final Pair<Float, Boolean> futureResult;
-                try {
-                    futureResult = futures.get(i).get();
-                    System.out.println("futureResult:" + futureResult);
-                    final ParamsAndCallable paramsAndCallable = left.get(i);
-                    final Map<String, String> p = paramsAndCallable.getParams();
-                    for (final Map.Entry<String, String> entry : p.entrySet()) {
-                        System.out.println("key:" + entry.getKey() + " value:" + entry.getValue());
-                    }
-
-                    if (futureResult.getRight()) {
-                        processManager.addToLongerRuntimeWaitingList(paramsAndCallable);
-                    }
-
-                    synchronized (Laozhongyi.class) {
-                        if (bestPair.getRight() < futureResult.getLeft()) {
-                            bestPair.setRight(futureResult.getLeft());
-                            bestPair.setLeft(paramsAndCallable.getParams());
-
-                            System.out.println("bestResult:" + bestPair.getRight());
-                            for (final Map.Entry<String, String> entry : bestPair.getLeft()
-                                    .entrySet()) {
-                                System.out.println(
-                                        "key:" + entry.getKey() + " value:" + entry.getValue());
-                            }
-                            final String logFileFullPath = GeneratedFileManager
-                                    .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
-                            System.out.println("best log: " + logFileFullPath);
-
-                            final String hyperPath = GeneratedFileManager
-                                    .getLogFileFullPath(bestPair.getLeft(), multiValueKeys);
-                            System.out.println("hyper: " + hyperPath);
-                        }
-                    }
-                } catch (final InterruptedException | ExecutionException e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-        }
         System.out.println("hyperparameter adjusted, the best result is " + bestPair.getRight());
         System.out.println("best hyperparameters:");
         for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
@@ -236,12 +177,11 @@ public class Laozhongyi {
                                                             final Set<String> multiValueKeys,
                                                             final Map<String, String> currentHyperParameter,
                                                             final String cmdString,
-                                                            final ExecutorService executorService
-            , final Strategy strategy,
+                                                            final ExecutorService executorService,
+                                                            final Strategy strategy,
                                                             final MutablePair<Map<String, String>
                                                                     , Float> best,
                                                             final String workingDir,
-                                                            final ProcessManager processManager,
                                                             boolean isFirstTry) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
@@ -267,9 +207,6 @@ public class Laozhongyi {
                 System.out.println("key:" + item.getKey() + " value:"
                         + paramsAndCallables.get(i).getParams().get(item.getKey())
                         + " futureResult:" + futureResult);
-                if (futureResult.getRight()) {
-                    processManager.addToLongerRuntimeWaitingList(paramsAndCallables.get(i));
-                }
             } catch (final InterruptedException | ExecutionException e) {
                 throw new IllegalStateException(e);
             }

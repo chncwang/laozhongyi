@@ -11,12 +11,11 @@ public class SimulatedAnnealingCheckPointData extends CheckPointData {
                                             final Map<String, String> currentHyperParameters,
                                             final float currentScore,
                                             final int currentHyperParametersIndex,
-                                            final List<Float> computedScoresInGroup,
                                             final List<Float> currentHyperParameterValues,
                                             final Map<String, String> bestHyperParameters,
                                             final float bestScore) {
         super(currentHyperParameters, currentScore, currentHyperParametersIndex,
-                computedScoresInGroup, currentHyperParameterValues, bestHyperParameters, bestScore);
+                currentHyperParameterValues, bestHyperParameters, bestScore);
         this.temperature = temperature;
         this.decayRate = decayRate;
     }

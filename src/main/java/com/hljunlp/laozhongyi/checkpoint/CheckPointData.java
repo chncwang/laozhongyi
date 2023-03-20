@@ -7,20 +7,17 @@ public class CheckPointData {
     private final Map<String, String> currentHyperParameters;
     private final float currentScore;
     private final int currentHyperParametersIndex;
-    private final List<Float> computedScoresInGroup;
     private final List<Float> currentHyperParameterValues;
     private final Map<String, String> bestHyperParameters;
     private final float bestScore;
 
     public CheckPointData(final Map<String, String> currentHyperParameters,
                           final float currentScore, final int currentHyperParametersIndex,
-                          final List<Float> computedScoresInGroup,
                           final List<Float> currentHyperParameterValues, final Map<String,
             String> bestHyperParameters, final float bestScore) {
         this.currentHyperParameters = currentHyperParameters;
         this.currentScore = currentScore;
         this.currentHyperParametersIndex = currentHyperParametersIndex;
-        this.computedScoresInGroup = computedScoresInGroup;
         this.currentHyperParameterValues = currentHyperParameterValues;
         this.bestHyperParameters = bestHyperParameters;
         this.bestScore = bestScore;
@@ -36,10 +33,6 @@ public class CheckPointData {
 
     public int getCurrentHyperParametersIndex() {
         return currentHyperParametersIndex;
-    }
-
-    public List<Float> getComputedScoresInGroup() {
-        return computedScoresInGroup;
     }
 
     public List<Float> getCurrentHyperParameterValues() {
