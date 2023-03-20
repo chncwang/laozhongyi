@@ -1,9 +1,10 @@
 package com.hljunlp.laozhongyi.process;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -27,12 +28,12 @@ public class ShellProcess implements Callable<Pair<Float, Boolean>> {
     private final Map<String, String> mCopiedHyperParameter;
     private final Set<String> mMultiValueKeys;
     private final String mCmdString;
-    private final Optional<String> mWorkingDir;
+    private final String mWorkingDir;
     private int mTriedTimes = 0;
 
     public ShellProcess(final Map<String, String> copiedHyperParameter,
             final Set<String> multiValueKeys, final String cmdString,
-            final Optional<String> workingDir) {
+            final String workingDir) {
         mCopiedHyperParameter = copiedHyperParameter;
         mMultiValueKeys = multiValueKeys;
         mCmdString = cmdString;
@@ -58,14 +59,14 @@ public class ShellProcess implements Callable<Pair<Float, Boolean>> {
         final String logFileFullPath = GeneratedFileManager
                 .getLogFileFullPath(mCopiedHyperParameter, mMultiValueKeys);
         System.out.println("logFileFullPath:" + logFileFullPath);
-        try (OutputStream os = new FileOutputStream(logFileFullPath)) {
+        try (OutputStream os = Files.newOutputStream(Paths.get(logFileFullPath))) {
             final DefaultExecutor executor = new DefaultExecutor();
             executor.setStreamHandler(new PumpStreamHandler(os));
-            if (mWorkingDir.isPresent()) {
-                executor.setWorkingDirectory(new File(mWorkingDir.get()));
+            if (mWorkingDir != null) {
+                executor.setWorkingDirectory(new File(mWorkingDir));
             }
             final int runtimeMinutes = ProcessManager.runtimeLimitInMinutes(mTriedTimes);
-            final ExecuteWatchdog dog = new ExecuteWatchdog(60000 * runtimeMinutes);
+            final ExecuteWatchdog dog = new ExecuteWatchdog(60000L * runtimeMinutes);
             executor.setWatchdog(dog);
             System.out.println("begin to execute " + newCmdString);
             final org.apache.commons.exec.CommandLine commandLine = org.apache.commons.exec.CommandLine

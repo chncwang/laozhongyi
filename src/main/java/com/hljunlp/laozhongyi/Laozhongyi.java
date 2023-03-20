@@ -1,29 +1,5 @@
 package com.hljunlp.laozhongyi;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,7 +10,18 @@ import com.hljunlp.laozhongyi.process.ShellProcess;
 import com.hljunlp.laozhongyi.strategy.BaseStrategy;
 import com.hljunlp.laozhongyi.strategy.Strategy;
 import com.hljunlp.laozhongyi.strategy.TraiditionalSimulatedAnnealingStrategy;
-import com.hljunlp.laozhongyi.strategy.VariantSimulatedAnnealingStrategy;
+import org.apache.commons.cli.*;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Laozhongyi {
     public static void main(final String[] args) {
@@ -77,7 +64,7 @@ public class Laozhongyi {
             cmd = parser.parse(options, args);
         } catch (final ParseException e) {
             final HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("laozhonghi", options);
+            formatter.printHelp("laozhongyi", options);
             throw new IllegalStateException(e);
         }
 
@@ -95,13 +82,9 @@ public class Laozhongyi {
         if (strategyStr.equals("base")) {
             strategy = new BaseStrategy();
         } else if (strategyStr.equals("sa")) {
-            final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
-            final float t = Float.valueOf(cmd.getOptionValue("sat"));
+            final float ratio = Float.parseFloat(cmd.getOptionValue("sar"));
+            final float t = Float.parseFloat(cmd.getOptionValue("sat"));
             strategy = new TraiditionalSimulatedAnnealingStrategy(ratio, t);
-        } else if (strategyStr.equals("vsa")) {
-            final float ratio = Float.valueOf(cmd.getOptionValue("sar"));
-            final float t = Float.valueOf(cmd.getOptionValue("sat"));
-            strategy = new VariantSimulatedAnnealingStrategy(ratio, t);
         } else {
             throw new IllegalArgumentException("strategy param is " + strategyStr);
         }
@@ -110,9 +93,9 @@ public class Laozhongyi {
 
         final String programCmd = cmd.getOptionValue("c");
 
-        final int runtimeMinutes = Integer.valueOf(cmd.getOptionValue("rt"));
+        final int runtimeMinutes = Integer.parseInt(cmd.getOptionValue("rt"));
 
-        final int processCountLimit = Integer.valueOf(cmd.getOptionValue("pc"));
+        final int processCountLimit = Integer.parseInt(cmd.getOptionValue("pc"));
 
         GeneratedFileManager.mkdirForLog();
         GeneratedFileManager.mkdirForHyperParameterConfig();
@@ -140,8 +123,8 @@ public class Laozhongyi {
                 }
                 System.out.println("item:" + item);
                 final Pair<Map<String, String>, Float> result = tryItem(item, multiValueKeys,
-                        params, programCmd, executorService, strategy, bestPair,
-                        Optional.ofNullable(workingDirStr), runtimeMinutes, processManager, isFirstTry);
+                        params, programCmd, executorService, strategy, bestPair, workingDirStr,
+                        processManager, isFirstTry);
                 isFirstTry = false;
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
@@ -226,15 +209,13 @@ public class Laozhongyi {
                             System.out.println("hyper: " + hyperPath);
                         }
                     }
-                } catch (final InterruptedException e) {
-                    throw new IllegalStateException(e);
-                } catch (final ExecutionException e) {
+                } catch (final InterruptedException | ExecutionException e) {
                     throw new IllegalStateException(e);
                 }
             }
         }
         System.out.println("hyperparameter adjusted, the best result is " + bestPair.getRight());
-        System.out.println("best hyperparameteres:");
+        System.out.println("best hyperparameters:");
         for (final Entry<String, String> entry : bestPair.getLeft().entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
         }
@@ -252,10 +233,16 @@ public class Laozhongyi {
     }
 
     private static Pair<Map<String, String>, Float> tryItem(final HyperParameterScopeItem item,
-            final Set<String> multiValueKeys, final Map<String, String> currentHyperParameter,
-            final String cmdString, final ExecutorService executorService, final Strategy strategy,
-            final MutablePair<Map<String, String>, Float> best, final Optional<String> workingDir,
-            final int runtimeMinutes, final ProcessManager processManager, boolean isFirstTry) {
+                                                            final Set<String> multiValueKeys,
+                                                            final Map<String, String> currentHyperParameter,
+                                                            final String cmdString,
+                                                            final ExecutorService executorService
+            , final Strategy strategy,
+                                                            final MutablePair<Map<String, String>
+                                                                    , Float> best,
+                                                            final String workingDir,
+                                                            final ProcessManager processManager,
+                                                            boolean isFirstTry) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
         final List<Future<Pair<Float, Boolean>>> futures = Lists.newArrayList();
@@ -283,9 +270,7 @@ public class Laozhongyi {
                 if (futureResult.getRight()) {
                     processManager.addToLongerRuntimeWaitingList(paramsAndCallables.get(i));
                 }
-            } catch (final InterruptedException e) {
-                throw new IllegalStateException(e);
-            } catch (final ExecutionException e) {
+            } catch (final InterruptedException | ExecutionException e) {
                 throw new IllegalStateException(e);
             }
 
