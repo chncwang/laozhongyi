@@ -1,5 +1,7 @@
 package com.hljunlp.laozhongyi.checkpoint;
 
+import com.hljunlp.laozhongyi.HyperParamResultManager;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,10 +88,12 @@ public class CheckPointData {
                 newBestHyperParameters, bestScore, newHyperParametersToScore);
     }
 
-    public CheckPointData addHyperParameterToScore(final Map<String, String> hyperParameters,
-                                                   final float score) {
+    public synchronized CheckPointData addHyperParameterToScoreMap() {
         CheckPointData newCheckPointData = deepCopy();
-        newCheckPointData.hyperParametersToScore.put(hyperParameters, score);
+        for (Map.Entry<Map<String, String>, Float> entry :
+                HyperParamResultManager.deepCopyResults().entrySet()) {
+            newCheckPointData.getHyperParametersToScore().put(entry.getKey(), entry.getValue());
+        }
         return newCheckPointData;
     }
 }
