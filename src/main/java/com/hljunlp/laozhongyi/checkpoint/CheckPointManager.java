@@ -30,16 +30,26 @@ public class CheckPointManager {
         jsonObject.put("currentHyperParametersIndex", data.getCurrentHyperParametersIndex());
         jsonObject.put("bestHyperParameters", data.getBestHyperParameters());
         jsonObject.put("bestScore", data.getBestScore());
+        Map<String, String> hyperParametersToScore = new HashMap<>();
+        for (Map.Entry<Map<String, String>, Float> entry : data.getHyperParametersToScore()
+                .entrySet()) {
+            hyperParametersToScore.put(mapToString(entry.getKey()), entry.getValue().toString());
+        }
+        jsonObject.put("hyperParametersToScore", hyperParametersToScore);
         return jsonObject;
     }
 
     /**
      * Save the checkpoint as a JSON file.
      */
-    public void save(final CheckPointData data) {
+    public synchronized void save(final CheckPointData data) {
+        String savePath = mCheckPointPath + "." + System.currentTimeMillis();
+        save(data, savePath);
+    }
+
+    public synchronized void save(final CheckPointData data, final String savePath) {
         JSONObject jsonObject = convertToJSON(data);
         try {
-            String savePath = mCheckPointPath + "." + System.currentTimeMillis();
             FileWriter fileWriter = new FileWriter(savePath);
             fileWriter.write(jsonObject.toString());
             fileWriter.close();
@@ -66,21 +76,64 @@ public class CheckPointManager {
         Map<String, String> bestHyperParameters = jsonObjectToMap(jsonObject.getJSONObject(
                 "bestHyperParameters"));
         float bestScore = (float) jsonObject.getDouble("bestScore");
+
+        JSONObject hyperParametersToScoreJSONObject = jsonObject.getJSONObject(
+                "hyperParametersToScore");
+        Map<String, Object> map = hyperParametersToScoreJSONObject.toMap();
+        Map<Map<String, String>, Float> hyperParametersToScore = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String keyString = entry.getKey();
+            Float value = Float.parseFloat(entry.getValue().toString());
+            Map<String, String> key = stringToMap(keyString);
+            hyperParametersToScore.put(key, value);
+        }
+
         return new CheckPointData(currentHyperParameters, currentHyperParametersIndex,
-                bestHyperParameters, bestScore);
+                bestHyperParameters, bestScore, hyperParametersToScore);
     }
 
     public CheckPointData load() {
-        File file = new File(mCheckPointPath);
+        return load(mCheckPointPath);
+    }
+
+    public CheckPointData load(String loadPath) {
+        File file = new File(loadPath);
         if (!file.exists()) {
             return null;
         }
         try {
-            String jsonString = new String(Files.readAllBytes(Paths.get(mCheckPointPath)));
+            String jsonString = new String(Files.readAllBytes(Paths.get(loadPath)));
             JSONObject jsonObject = new JSONObject(jsonString);
             return convertFromJSON(jsonObject);
         } catch (IOException | JSONException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String mapToString(Map<String, String> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            sb.append(entry.getKey());
+            sb.append("=");
+            sb.append(entry.getValue());
+            sb.append(",");
+        }
+        if (sb.length() > 0) {
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        return sb.toString();
+    }
+
+    public static Map<String, String> stringToMap(String str) {
+        Map<String, String> map = new HashMap<>();
+        String[] entries = str.split(",");
+        for (String entry : entries) {
+            String[] parts = entry.split("=");
+            if (parts.length == 2) {
+                map.put(parts[0], parts[1]);
+            }
+        }
+        return map;
     }
 }
