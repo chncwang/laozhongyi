@@ -19,18 +19,28 @@ public class SimulatedAnnealingCheckPointManagerTest {
         Map<String, String> bestHyperParameters = new HashMap<>();
         bestHyperParameters.put("param3", "value3");
         bestHyperParameters.put("param4", "value4");
+        Map<Map<String, String>, Float> hyperParametersToScore = new HashMap<>();
+        hyperParametersToScore.put(currentHyperParameters, 0.8f);
+        hyperParametersToScore.put(bestHyperParameters, 0.9f);
+        for (int i = 0; i < 10; i++) {
+            Map<String, String> hyperParameters = new HashMap<>();
+            for (int j = 0; j < 10; j++) {
+                hyperParameters.put("param" + j, "value" + j);
+            }
+            hyperParametersToScore.put(hyperParameters, 0.1f * i);
+        }
         SimulatedAnnealingCheckPointData data = new SimulatedAnnealingCheckPointData(1.0f, 0.5f,
-                currentHyperParameters, 2, bestHyperParameters, 0.9f);
+                currentHyperParameters, 2, bestHyperParameters, 0.9f, hyperParametersToScore);
 
         // Save the SimulatedAnnealingCheckPointData object to a file
         String filePath = "checkpoint.json";
         SimulatedAnnealingCheckPointManager manager =
                 new SimulatedAnnealingCheckPointManager(filePath);
-        manager.save(data);
+        manager.save(data, "checkpoint-test.json");
 
         // Load the SimulatedAnnealingCheckPointData object from the file
         SimulatedAnnealingCheckPointData loadedData =
-                (SimulatedAnnealingCheckPointData) manager.load();
+                (SimulatedAnnealingCheckPointData) manager.load("checkpoint-test.json");
 
         // Compare the loaded SimulatedAnnealingCheckPointData object with the original one
         Assertions.assertEquals(data.getTemperature(), loadedData.getTemperature());
@@ -42,6 +52,21 @@ public class SimulatedAnnealingCheckPointManagerTest {
                 loadedData.getCurrentHyperParameters().size());
         Assertions.assertEquals(data.getBestHyperParameters().size(),
                 loadedData.getBestHyperParameters().size());
+        Assertions.assertEquals(data.getHyperParametersToScore().size(),
+                loadedData.getHyperParametersToScore().size());
+        for (Map.Entry<String, String> entry : data.getCurrentHyperParameters().entrySet()) {
+            Assertions.assertEquals(entry.getValue(),
+                    loadedData.getCurrentHyperParameters().get(entry.getKey()));
+        }
+        for (Map.Entry<String, String> entry : data.getBestHyperParameters().entrySet()) {
+            Assertions.assertEquals(entry.getValue(),
+                    loadedData.getBestHyperParameters().get(entry.getKey()));
+        }
+        for (Map.Entry<Map<String, String>, Float> entry :
+                data.getHyperParametersToScore().entrySet()) {
+            Assertions.assertEquals(entry.getValue(),
+                    loadedData.getHyperParametersToScore().get(entry.getKey()));
+        }
     }
 
     @Test
