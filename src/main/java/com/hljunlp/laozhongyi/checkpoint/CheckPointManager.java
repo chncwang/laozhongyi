@@ -11,9 +11,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class CheckPointManager {
     private final String mCheckPointPath;
+    private CheckPointData mCheckPointData;
 
     /**
      * Constructor.
@@ -48,6 +50,7 @@ public class CheckPointManager {
     }
 
     public synchronized void save(final CheckPointData data, final String savePath) {
+        mCheckPointData = data.deepCopy();
         JSONObject jsonObject = convertToJSON(data);
         try {
             FileWriter fileWriter = new FileWriter(savePath);
@@ -56,6 +59,14 @@ public class CheckPointManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public synchronized void saveIncrementally() {
+        if (mCheckPointData == null) {
+            return;
+        }
+        mCheckPointData = mCheckPointData.addHyperParameterToScoreMap();
+        save(mCheckPointData);
     }
 
     protected static Map<String, String> jsonObjectToMap(JSONObject jsonObject) {
@@ -111,7 +122,9 @@ public class CheckPointManager {
         }
     }
 
-    public static String mapToString(Map<String, String> map) {
+    public static String mapToString(Map<String, String> passedMap) {
+        // Create a TreeMap to fix the order of the keys in the string.
+        Map<String, String> map = new TreeMap<>(passedMap);
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : map.entrySet()) {
             sb.append(entry.getKey());
