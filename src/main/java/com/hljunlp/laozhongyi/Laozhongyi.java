@@ -138,6 +138,13 @@ public class Laozhongyi {
         int currentHyperParameterIndex = initialCheckPointData == null ? 0 :
                 initialCheckPointData.getCurrentHyperParametersIndex();
 
+        if (initialCheckPointData != null) {
+            for (Entry<Map<String, String>, Float> entry :
+                    initialCheckPointData.getHyperParametersToScore().entrySet()) {
+                HyperParamResultManager.putResult(entry.getKey(), entry.getValue());
+            }
+        }
+
         int count = 0;
         while (true) {
             if (++count > 100000) {
@@ -157,7 +164,7 @@ public class Laozhongyi {
                 System.out.println("item:" + item);
                 final Pair<Map<String, String>, Float> result = tryItem(item, multiValueKeys,
                         params, programCmd, executorService, strategy, bestPair, workingDirStr,
-                        isFirstTry);
+                        isFirstTry, checkPointManager);
                 isFirstTry = false;
                 System.out.println("key:" + item.getKey() + "\nsuitable value:" + result.getLeft()
                         + " result:" + result.getRight());
@@ -189,10 +196,12 @@ public class Laozhongyi {
                         checkPointData =
                                 new SimulatedAnnealingCheckPointData(saStrategy.getTemperature(),
                                         saStrategy.getDecayRate(), params, itemIndex + 1,
-                                        bestPair.getLeft(), bestPair.getRight());
+                                        bestPair.getLeft(), bestPair.getRight(),
+                                        HyperParamResultManager.deepCopyResults());
                     } else {
                         checkPointData = new CheckPointData(params, itemIndex + 1,
-                                bestPair.getLeft(), bestPair.getRight());
+                                bestPair.getLeft(), bestPair.getRight(),
+                                HyperParamResultManager.deepCopyResults());
                     }
                     checkPointManager.save(checkPointData);
                 }
@@ -235,10 +244,11 @@ public class Laozhongyi {
                                                             final MutablePair<Map<String, String>
                                                                     , Float> best,
                                                             final String workingDir,
-                                                            boolean isFirstTry) {
+                                                            boolean isFirstTry, CheckPointManager
+                                                                    checkPointManager) {
         Preconditions.checkArgument(item.getValues().size() > 1);
 
-        final List<Future<Pair<Float, Boolean>>> futures = Lists.newArrayList();
+        final List<Future<Float>> futures = Lists.newArrayList();
         final List<ParamsAndCallable> paramsAndCallables = Lists.newArrayList();
 
         for (final String value : item.getValues()) {
@@ -246,15 +256,15 @@ public class Laozhongyi {
                     .modifiedNewMap(currentHyperParameter, item.getKey(), value);
 
             final ShellProcess callable = new ShellProcess(copiedHyperParameter, multiValueKeys,
-                    cmdString, workingDir);
-            final Future<Pair<Float, Boolean>> future = executorService.submit(callable);
+                    cmdString, workingDir, checkPointManager);
+            final Future<Float> future = executorService.submit(callable);
             futures.add(future);
             paramsAndCallables.add(new ParamsAndCallable(copiedHyperParameter, callable));
         }
 
         final List<Float> results = Lists.newArrayList();
         for (int i = 0; i < futures.size(); ++i) {
-            final Pair<Float, Boolean> futureResult;
+            final Float futureResult;
             try {
                 futureResult = futures.get(i).get();
                 System.out.println("key:" + item.getKey() + " value:"
@@ -264,7 +274,7 @@ public class Laozhongyi {
                 throw new IllegalStateException(e);
             }
 
-            results.add(futureResult.getLeft());
+            results.add(futureResult);
         }
 
         float localBestResult = -1;
