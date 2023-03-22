@@ -88,16 +88,18 @@ public class CheckPointManager {
                 "bestHyperParameters"));
         float bestScore = (float) jsonObject.getDouble("bestScore");
 
-        JSONObject hyperParametersToScoreJSONObject = jsonObject.getJSONObject(
-                "hyperParametersToScore");
-        Map<String, Object> map = hyperParametersToScoreJSONObject.toMap();
         Map<Map<String, String>, Float> hyperParametersToScore = new HashMap<>();
+        if (jsonObject.has("hyperParametersToScore")) {
+            JSONObject hyperParametersToScoreJSONObject = jsonObject.getJSONObject(
+                    "hyperParametersToScore");
+            Map<String, Object> map = hyperParametersToScoreJSONObject.toMap();
 
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            String keyString = entry.getKey();
-            Float value = Float.parseFloat(entry.getValue().toString());
-            Map<String, String> key = stringToMap(keyString);
-            hyperParametersToScore.put(key, value);
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                String keyString = entry.getKey();
+                Float value = Float.parseFloat(entry.getValue().toString());
+                Map<String, String> key = stringToMap(keyString);
+                hyperParametersToScore.put(key, value);
+            }
         }
 
         return new CheckPointData(currentHyperParameters, currentHyperParametersIndex,
