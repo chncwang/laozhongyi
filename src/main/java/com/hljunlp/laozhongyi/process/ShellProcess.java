@@ -1,5 +1,16 @@
 package com.hljunlp.laozhongyi.process;
 
+import com.google.common.base.Charsets;
+import com.hljunlp.laozhongyi.GeneratedFileManager;
+import com.hljunlp.laozhongyi.HyperParamResultManager;
+import com.hljunlp.laozhongyi.HyperParameterConfig;
+import com.hljunlp.laozhongyi.Utils;
+import com.hljunlp.laozhongyi.checkpoint.CheckPointManager;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,45 +21,29 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
-import com.google.common.base.Charsets;
-import com.hljunlp.laozhongyi.GeneratedFileManager;
-import com.hljunlp.laozhongyi.HyperParamResultManager;
-import com.hljunlp.laozhongyi.HyperParameterConfig;
-import com.hljunlp.laozhongyi.Utils;
-
-public class ShellProcess implements Callable<Pair<Float, Boolean>> {
+public class ShellProcess implements Callable<Float> {
     private final Map<String, String> mCopiedHyperParameter;
     private final Set<String> mMultiValueKeys;
     private final String mCmdString;
     private final String mWorkingDir;
-    private int mTriedTimes = 0;
+
+    private final CheckPointManager mCheckPointManager;
 
     public ShellProcess(final Map<String, String> copiedHyperParameter,
-            final Set<String> multiValueKeys, final String cmdString,
-            final String workingDir) {
+                        final Set<String> multiValueKeys, final String cmdString,
+                        final String workingDir, CheckPointManager mCheckPointManager) {
         mCopiedHyperParameter = copiedHyperParameter;
         mMultiValueKeys = multiValueKeys;
         mCmdString = cmdString;
         mWorkingDir = workingDir;
+        this.mCheckPointManager = mCheckPointManager;
     }
 
-    public int getTriedTimes() {
-        return mTriedTimes;
-    }
-
-    public Pair<Float, Boolean> innerCall() {
-        final Optional<Float> cachedResult = HyperParamResultManager
-                .getResult(mCopiedHyperParameter, mTriedTimes + 1);
+    public float innerCall() {
+        final Optional<Float> cachedResult =
+                HyperParamResultManager.getResult(mCopiedHyperParameter);
         if (cachedResult.isPresent()) {
-            return ImmutablePair.of(cachedResult.get(), false);
+            return cachedResult.get();
         }
 
         final String configFilePath = GeneratedFileManager
@@ -65,18 +60,14 @@ public class ShellProcess implements Callable<Pair<Float, Boolean>> {
             if (mWorkingDir != null) {
                 executor.setWorkingDirectory(new File(mWorkingDir));
             }
-            final int runtimeMinutes = ProcessManager.runtimeLimitInMinutes(mTriedTimes);
-            final ExecuteWatchdog dog = new ExecuteWatchdog(60000L * runtimeMinutes);
-            executor.setWatchdog(dog);
             System.out.println("begin to execute " + newCmdString);
-            final org.apache.commons.exec.CommandLine commandLine = org.apache.commons.exec.CommandLine
-                    .parse(newCmdString);
-            boolean isTimeout = false;
+            final org.apache.commons.exec.CommandLine commandLine =
+                    org.apache.commons.exec.CommandLine
+                            .parse(newCmdString);
             try {
                 executor.execute(commandLine);
             } catch (final ExecuteException e) {
                 System.out.println(e.getMessage());
-                isTimeout = true;
             } catch (final IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -85,23 +76,24 @@ public class ShellProcess implements Callable<Pair<Float, Boolean>> {
                     Charsets.UTF_8);
             final float result = Utils.logResult(log);
 
-            HyperParamResultManager.putResult(mCopiedHyperParameter, mTriedTimes + 1, result);
+            HyperParamResultManager.putResult(mCopiedHyperParameter, result);
+            if (mCheckPointManager != null) {
+                mCheckPointManager.saveIncrementally();
+            }
 
-            return ImmutablePair.of(result, isTimeout);
+            return result;
         } catch (final IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
     @Override
-    public Pair<Float, Boolean> call() {
+    public Float call() {
         try {
             return innerCall();
         } catch (final RuntimeException e) {
             e.printStackTrace();
             throw e;
-        } finally {
-            mTriedTimes++;
         }
     }
 }
