@@ -1,26 +1,32 @@
 package com.hljunlp.laozhongyi;
 
+import com.google.common.collect.Maps;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-
-import com.google.common.collect.Maps;
-
 public class HyperParamResultManager {
-    private static final HashMap<Pair<Map<String, String>, Integer>, Float> mResults = Maps
-            .newHashMap();
+    private static final Map<Map<String, String>, Float> mResults = Maps.newHashMap();
 
-    public static synchronized Optional<Float> getResult(final Map<String, String> hyperParams,
-            final int triedTimes) {
-        return Optional.ofNullable(mResults.get(ImmutablePair.of(hyperParams, triedTimes)));
+    public static synchronized Optional<Float> getResult(final Map<String, String> hyperParams) {
+        return Optional.ofNullable(mResults.get(hyperParams));
     }
 
     public static synchronized void putResult(final Map<String, String> hyperParams,
-            final int triedTimes, final float result) {
-        final Pair<Map<String, String>, Integer> pair = ImmutablePair.of(hyperParams, triedTimes);
-        mResults.put(pair, result);
+                                              final float result) {
+        mResults.put(hyperParams, result);
+    }
+
+    public static Map<Map<String, String>, Float> deepCopyResults() {
+        Map<Map<String, String>, Float> copy = new HashMap<>();
+        synchronized (HyperParamResultManager.class) {
+            for (Map.Entry<Map<String, String>, Float> entry : mResults.entrySet()) {
+                Map<String, String> hyperParamsCopy = new HashMap<>(entry.getKey());
+                Float resultCopy = entry.getValue();
+                copy.put(hyperParamsCopy, resultCopy);
+            }
+        }
+        return copy;
     }
 }
