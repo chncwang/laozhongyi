@@ -29,6 +29,7 @@ public class SimulatedAnnealingCheckPointManager extends CheckPointManager {
         float decayRate = (float) jsonObject.getDouble("decayRate");
         return new SimulatedAnnealingCheckPointData(temperature, decayRate,
                 data.getCurrentHyperParameters(), data.getCurrentHyperParametersIndex(),
-                data.getBestHyperParameters(), data.getBestScore());
+                data.getBestHyperParameters(), data.getBestScore(),
+                data.getHyperParametersToScore());
     }
 }
