@@ -122,6 +122,7 @@ public class CheckPointManager {
         long largestSuffix = -1;
         String largestSuffixFileName = null;
         for (String fileName : fullFileNamesUnderDir) {
+            System.out.println("getFileWithLargestSuffix: fileName = " + fileName);
             String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
             long suffixLong = Long.parseLong(suffix);
             if (suffixLong > largestSuffix) {
