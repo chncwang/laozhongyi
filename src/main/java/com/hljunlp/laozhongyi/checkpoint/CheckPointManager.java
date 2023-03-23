@@ -109,8 +109,12 @@ public class CheckPointManager {
 
     public static File getFileWithLargestSuffix(String fullFileName) {
         final String dir = fullFileName.substring(0, fullFileName.lastIndexOf(File.separator));
+        System.out.println("getFileWithLargestSuffix: dir = " + dir);
+        File[] files = Objects.requireNonNull(new File(dir).listFiles());
+        System.out.println("getFileWithLargestSuffix: files = " + Arrays.toString(files));
         final List<String> fullFileNamesUnderDir = new ArrayList<>();
-        for (File file : Objects.requireNonNull(new File(dir).listFiles())) {
+        for (File file : files) {
+            System.out.println("getFileWithLargestSuffix: file = " + file);
             if (file.getName().startsWith(fullFileName)) {
                 fullFileNamesUnderDir.add(file.getAbsolutePath());
             }
