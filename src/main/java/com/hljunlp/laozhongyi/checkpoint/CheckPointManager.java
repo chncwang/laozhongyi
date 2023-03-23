@@ -135,6 +135,7 @@ public class CheckPointManager {
     public CheckPointData load(String loadPath) {
         File file = getFileWithLargestSuffix(loadPath);
         if (file == null) {
+            System.out.println("No checkpoint found at " + loadPath);
             return null;
         }
         try {
