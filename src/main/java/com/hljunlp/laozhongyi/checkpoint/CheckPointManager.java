@@ -8,10 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class CheckPointManager {
     private final String mCheckPointPath;
@@ -110,12 +107,38 @@ public class CheckPointManager {
         return load(mCheckPointPath);
     }
 
+    public static File getFileWithLargestSuffix(String fullFileName) {
+        final String dir = fullFileName.substring(0, fullFileName.lastIndexOf(File.separator));
+        final List<String> fullFileNamesUnderDir = new ArrayList<>();
+        for (File file : Objects.requireNonNull(new File(dir).listFiles())) {
+            if (file.getName().startsWith(fullFileName)) {
+                fullFileNamesUnderDir.add(file.getAbsolutePath());
+            }
+        }
+        long largestSuffix = -1;
+        String largestSuffixFileName = null;
+        for (String fileName : fullFileNamesUnderDir) {
+            String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+            long suffixLong = Long.parseLong(suffix);
+            if (suffixLong > largestSuffix) {
+                largestSuffix = suffixLong;
+                largestSuffixFileName = fileName;
+            }
+        }
+        if (largestSuffixFileName == null) {
+            return null;
+        } else {
+            return new File(largestSuffixFileName);
+        }
+    }
+
     public CheckPointData load(String loadPath) {
-        File file = new File(loadPath);
-        if (!file.exists()) {
+        File file = getFileWithLargestSuffix(loadPath);
+        if (file == null) {
             return null;
         }
         try {
+            System.out.println("Loading checkpoint from " + file.getAbsolutePath());
             String jsonString = new String(Files.readAllBytes(Paths.get(loadPath)));
             JSONObject jsonObject = new JSONObject(jsonString);
             return convertFromJSON(jsonObject);
