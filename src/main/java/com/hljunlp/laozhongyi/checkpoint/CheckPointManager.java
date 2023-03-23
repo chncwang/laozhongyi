@@ -115,7 +115,9 @@ public class CheckPointManager {
         final List<String> fullFileNamesUnderDir = new ArrayList<>();
         for (File file : files) {
             System.out.println("getFileWithLargestSuffix: file = " + file);
-            if (file.getName().startsWith(fullFileName)) {
+            System.out.println("getFileWithLargestSuffix: file.getAbsolutePath() = " + file.getAbsolutePath());
+            System.out.println("getFileWithLargestSuffix: fullFileName = " + fullFileName);
+            if (file.getAbsolutePath().startsWith(fullFileName)) {
                 fullFileNamesUnderDir.add(file.getAbsolutePath());
             }
         }
