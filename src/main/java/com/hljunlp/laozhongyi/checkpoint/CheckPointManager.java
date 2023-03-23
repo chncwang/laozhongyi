@@ -147,7 +147,7 @@ public class CheckPointManager {
         }
         try {
             System.out.println("Loading checkpoint from " + file.getAbsolutePath());
-            String jsonString = new String(Files.readAllBytes(Paths.get(loadPath)));
+            String jsonString = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
             JSONObject jsonObject = new JSONObject(jsonString);
             return convertFromJSON(jsonObject);
         } catch (IOException | JSONException e) {
