@@ -114,9 +114,6 @@ public class CheckPointManager {
         System.out.println("getFileWithLargestSuffix: files = " + Arrays.toString(files));
         final List<String> fullFileNamesUnderDir = new ArrayList<>();
         for (File file : files) {
-            System.out.println("getFileWithLargestSuffix: file = " + file);
-            System.out.println("getFileWithLargestSuffix: file.getAbsolutePath() = " + file.getAbsolutePath());
-            System.out.println("getFileWithLargestSuffix: fullFileName = " + fullFileName);
             if (file.getAbsolutePath().startsWith(fullFileName) && file.getAbsolutePath().charAt(
                     fullFileName.length()) == '.') {
                 fullFileNamesUnderDir.add(file.getAbsolutePath());
@@ -125,7 +122,6 @@ public class CheckPointManager {
         long largestSuffix = -1;
         String largestSuffixFileName = null;
         for (String fileName : fullFileNamesUnderDir) {
-            System.out.println("getFileWithLargestSuffix: fileName = " + fileName);
             String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
             long suffixLong = Long.parseLong(suffix);
             if (suffixLong > largestSuffix) {
